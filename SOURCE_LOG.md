@@ -73,9 +73,24 @@
 
 | 도구 | 용도 |
 |---|---|
-| Claude Code | 데이터(코퍼스) 생성·검증·필드 보강, 문서(SOURCE_LOG) 작성, git 작업 |
+| Claude Code | 데이터(코퍼스) 생성·검증·필드 보강, 문서(SOURCE_LOG) 작성, git 작업, 발표자료 HTML 생성 |
+| make-slide (npx) | 발표자료 HTML 템플릿/테마(keynote-apple) — 아래 §6 참조 |
 
 ## 5. 더미/합성 데이터
 
 - 시연용 서류 샘플은 **전부 가공 데이터**(가공 인명·임의 번호). 실제 PII 미사용.
 - (작성 시 이 절에 샘플 목록 추가)
+
+## 6. 발표자료 (`presentation/드리미_발표.html`)
+
+발표용 단일 HTML 슬라이드(12장, 자체완결 — 인라인 CSS/JS). 외부 의존성은 폰트 CDN 2종뿐(외부 이미지·JS 프레임워크 없음).
+
+| 항목 | 출처 | 라이선스 | 비고 |
+|---|---|---|---|
+| make-slide (AI 슬라이드 스킬·테마 템플릿) | github.com/kuneosu/make-slide | 확인 필요(배포 페이지) | `npx make-slide`로 설치, **keynote-apple** 테마 reference.html을 우리 내용으로 재작성 |
+| Pretendard | github.com/orioncactus/pretendard (jsDelivr CDN) | SIL OFL 1.1 | 본문·제목 폰트 |
+| JetBrains Mono | Google Fonts | SIL OFL 1.1 | 보조(숫자·라벨) 폰트 |
+
+- 슬라이드 내용은 **예선 기획서 수치 기준**으로 작성(초고령사회 통계·파이프라인·기대효과 등).
+- 시연 슬라이드의 QR·예시 공문은 **자리표시·가공 데이터**(실제 데모 주소는 대회 당일 교체).
+- 채택본은 **이미지 없음 버전** → 본 파일엔 외부 이미지 출처 없음(자동검색 Unsplash 이미지 버전은 미포함).

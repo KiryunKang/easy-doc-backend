@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>드리미 — 서류 사진 한 장으로 찾는 숨은 복지 혜택</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%; overflow: hidden; background: #000;
+      font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+      word-break: keep-all; overflow-wrap: break-word;
+    }
+
+    .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: #007AFF; transition: width 0.4s cubic-bezier(0.25,0.1,0.25,1); z-index: 1000; border-radius: 0 2px 2px 0; box-shadow: 0 0 8px rgba(0,122,255,0.4); }
+
+    .slide-counter { position: fixed; bottom: 24px; right: 32px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.5); z-index: 100; font-variant-numeric: tabular-nums; letter-spacing: 0.5px; transition: color 0.4s ease; }
+    .slide-counter.on-light { color: rgba(0,0,0,0.35); }
+
+    .hint { position: fixed; bottom: 24px; left: 32px; display: flex; gap: 8px; align-items: center; z-index: 100; font-size: 12px; color: rgba(255,255,255,0.4); transition: color 0.4s ease; }
+    .hint.on-light { color: rgba(0,0,0,0.3); }
+    .hint kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; font-family: 'Pretendard Variable', sans-serif; font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; transition: background 0.4s ease, border-color 0.4s ease, color 0.4s ease; }
+    .hint.on-light kbd { color: rgba(0,0,0,0.4); background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.15); }
+
+    .fullscreen-btn { position: fixed; top: 20px; right: 24px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: rgba(255,255,255,0.6); font-size: 18px; cursor: pointer; z-index: 100; transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .fullscreen-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.85); transform: scale(1.05); }
+    .fullscreen-btn.on-light { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.45); }
+    .fullscreen-btn.on-light:hover { background: rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.2); color: rgba(0,0,0,0.7); }
+
+    .notes-panel { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; color: #f0f0f0; border-top: 1px solid #333; padding: 20px 32px; font-size: 15px; line-height: 1.7; z-index: 200; transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.25,0.1,0.25,1); max-height: 220px; overflow-y: auto; }
+    .notes-panel.visible { transform: translateY(0); }
+    .notes-panel .notes-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #666; margin-bottom: 8px; font-weight: 600; }
+
+    .deck { width: 100vw; height: 100vh; position: relative; }
+    .slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 60px 100px; opacity: 0; visibility: hidden; overflow-y: auto; transition: opacity 0.6s cubic-bezier(0.25,0.1,0.25,1), visibility 0.6s; }
+    .slide.active { opacity: 1; visibility: visible; }
+    .slide-dark { background: #000; color: #ffffff; }
+    .slide-gradient { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); color: #ffffff; }
+    .slide-light { background: #ffffff; color: #1a1a1a; }
+
+    .slide .a { opacity: 0; transform: translateY(30px); transition: opacity 0.6s cubic-bezier(0.25,0.1,0.25,1), transform 0.6s cubic-bezier(0.25,0.1,0.25,1); }
+    .slide.active .a { opacity: 1; transform: translateY(0); }
+    .slide.active .a:nth-child(1) { transition-delay: 0.1s; }
+    .slide.active .a:nth-child(2) { transition-delay: 0.22s; }
+    .slide.active .a:nth-child(3) { transition-delay: 0.34s; }
+    .slide.active .a:nth-child(4) { transition-delay: 0.46s; }
+    .slide.active .a:nth-child(5) { transition-delay: 0.58s; }
+    .slide.active .a:nth-child(6) { transition-delay: 0.7s; }
+    .slide.active .a:nth-child(7) { transition-delay: 0.82s; }
+    .slide.active .a:nth-child(8) { transition-delay: 0.94s; }
+
+    .xl { font-size: 84px; font-weight: 900; line-height: 1.05; letter-spacing: -2px; }
+    .lg { font-size: 58px; font-weight: 900; line-height: 1.1; letter-spacing: -1.5px; }
+    .md { font-size: 36px; font-weight: 700; line-height: 1.25; letter-spacing: -0.5px; }
+    .sm { font-size: 22px; font-weight: 400; line-height: 1.6; }
+    .xs { font-size: 16px; font-weight: 400; line-height: 1.6; }
+    .text-center { text-align: center; }
+    .text-gradient { background: linear-gradient(135deg, #007AFF, #5856D6, #AF52DE); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .text-subtle { opacity: 0.5; }
+    .text-muted { opacity: 0.7; }
+    .accent { color: #007AFF; }
+    .mt-1 { margin-top: 16px; } .mt-2 { margin-top: 32px; } .mt-3 { margin-top: 48px; }
+    .mb-1 { margin-bottom: 16px; } .mb-2 { margin-bottom: 32px; }
+
+    .overline { font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 6px; color: #007AFF; }
+    .label-tag { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 4px; color: #007AFF; margin-bottom: 8px; }
+
+    .title-slide { gap: 22px; }
+    .title-slide .xl { font-size: 120px; letter-spacing: -4px; }
+    .title-slide .subtitle { font-size: 26px; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 8px; }
+
+    .content-centered { max-width: 980px; text-align: center; gap: 22px; }
+    .content-centered .divider { width: 60px; height: 3px; background: #007AFF; border-radius: 2px; margin: 8px auto; }
+
+    /* STAT GRID */
+    .stat-grid { display: flex; gap: 48px; flex-wrap: wrap; justify-content: center; margin-top: 40px; width: 100%; max-width: 1050px; }
+    .stat-item { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 180px; }
+    .stat-num { font-size: 64px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+    .stat-label { font-size: 17px; color: rgba(255,255,255,0.6); line-height: 1.4; max-width: 200px; }
+
+    /* CARDS */
+    .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; max-width: 1040px; margin-top: 44px; }
+    .glass-card { background: rgba(255,255,255,0.06); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 36px 28px; text-align: left; transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+    .glass-card:hover { transform: translateY(-4px); border-color: rgba(0,122,255,0.3); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+    .glass-card .card-icon { font-size: 40px; margin-bottom: 18px; display: block; line-height: 0; }
+    .glass-card .card-icon svg { width: 44px; height: 44px; stroke: #007AFF; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Slide 5 emphasis */
+    .hl-emph { font-weight: 700; }
+
+    /* Slide 9 — LIVE DEMO (QR + example document) */
+    .demo-row { display: flex; gap: 56px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
+    .qr-box { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .qr-frame { width: 220px; height: 220px; background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 14px 44px rgba(0,0,0,0.4); }
+    .qr-frame svg { width: 100%; height: 100%; display: block; }
+    .qr-cap { font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.8); letter-spacing: 0.3px; }
+    .qr-note { font-size: 13px; color: #007AFF; font-weight: 600; }
+    .doc-card { width: 380px; max-width: 100%; background: #fbfbfd; color: #1a1a1a; border-radius: 16px; padding: 26px 30px; text-align: left; box-shadow: 0 14px 44px rgba(0,0,0,0.4); border-top: 4px solid #007AFF; }
+    .doc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .doc-org { font-size: 13px; color: #666; font-weight: 600; }
+    .doc-badge { font-size: 11px; font-weight: 700; color: #007AFF; background: rgba(0,122,255,0.12); padding: 3px 11px; border-radius: 999px; }
+    .doc-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+    .doc-line { font-size: 15px; color: #333; padding: 8px 0; border-top: 1px solid #ededf0; display: flex; gap: 14px; }
+    .doc-line b { color: #007AFF; font-weight: 700; min-width: 40px; }
+    .doc-foot { margin-top: 14px; font-size: 12px; color: #999; }
+    .glass-card .card-num { font-size: 13px; font-weight: 700; color: #007AFF; letter-spacing: 2px; margin-bottom: 10px; }
+    .glass-card h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.5px; }
+    .glass-card p { font-size: 16px; line-height: 1.6; color: rgba(255,255,255,0.62); }
+    .glass-card .card-tag { display: inline-block; margin-top: 16px; padding: 4px 12px; font-size: 12px; font-weight: 600; border-radius: 20px; background: rgba(0,122,255,0.15); color: #007AFF; }
+
+    /* PIPELINE */
+    .pipeline { display: flex; gap: 10px; align-items: stretch; width: 100%; max-width: 1180px; margin-top: 44px; }
+    .pstep { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 26px 16px; text-align: center; position: relative; }
+    .pstep .step-glow { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); width: 60%; height: 2px; background: linear-gradient(90deg, transparent, #007AFF, transparent); border-radius: 2px; }
+    .pstep .pnum { font-size: 12px; font-weight: 700; color: #007AFF; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+    .pstep .ptitle { font-size: 19px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.3px; }
+    .pstep .pdesc { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.45; }
+    .parrow { display: flex; align-items: center; font-size: 18px; color: rgba(255,255,255,0.25); flex-shrink: 0; }
+    .pipe-foot { margin-top: 28px; font-size: 20px; font-weight: 700; }
+    .pipe-foot .accent { font-weight: 900; }
+
+    /* FEATURE LIST */
+    .feat-list { list-style: none; width: 100%; max-width: 760px; margin-top: 36px; text-align: left; }
+    .feat-list li { display: flex; align-items: flex-start; gap: 18px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 22px; font-weight: 500; letter-spacing: -0.3px; }
+    .feat-list li:last-child { border-bottom: none; }
+    .feat-list .ck { color: #007AFF; font-weight: 900; font-size: 22px; flex-shrink: 0; line-height: 1.4; }
+
+    /* BIG FIGURE */
+    .big-figure { font-size: 96px; font-weight: 900; letter-spacing: -3px; line-height: 1.02; }
+    .breakdown { list-style: none; margin-top: 28px; display: flex; flex-direction: column; gap: 12px; max-width: 720px; }
+    .breakdown li { font-size: 18px; line-height: 1.5; }
+    .breakdown .dot { color: #007AFF; font-weight: 900; margin-right: 8px; }
+
+    /* TAGS */
+    .tag-row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 40px; }
+    .tag { padding: 12px 26px; font-size: 22px; font-weight: 700; border-radius: 999px; border: 1px solid rgba(0,122,255,0.4); background: rgba(0,122,255,0.12); color: #fff; }
+    .tag.muted { color: rgba(255,255,255,0.55); border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); }
+
+    .closing-slide { gap: 18px; }
+    .closing-slide .closing-title { font-size: 76px; font-weight: 900; letter-spacing: -2.5px; line-height: 1.12; }
+    .closing-slide .closing-sub { font-size: 22px; font-weight: 400; color: rgba(255,255,255,0.45); margin-top: 12px; }
+
+    @media print {
+      html, body { width: 100%; height: auto; overflow: visible; background: #fff; }
+      .progress-bar, .slide-counter, .hint, .fullscreen-btn, .notes-panel { display: none !important; }
+      .deck { width: 100%; height: auto; }
+      .slide { position: relative; opacity: 1 !important; visibility: visible !important; page-break-after: always; page-break-inside: avoid; width: 100%; height: 100vh; padding: 60px 80px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .slide .a { opacity: 1 !important; transform: none !important; }
+      .slide-dark { background: #000 !important; color: #fff !important; }
+      .slide-gradient { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460) !important; color: #fff !important; }
+      .slide-light { background: #fff !important; color: #1a1a1a !important; }
+    }
+
+    @media (max-width: 900px) {
+      .slide { padding: 48px 40px; }
+      .xl { font-size: 52px; } .lg { font-size: 38px; } .md { font-size: 26px; } .sm { font-size: 18px; }
+      .title-slide .xl { font-size: 72px; }
+      .big-figure { font-size: 60px; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .pipeline { flex-direction: column; } .parrow { transform: rotate(90deg); justify-content: center; }
+      .stat-grid { gap: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="progress-bar" id="progress"></div>
+  <div class="slide-counter" id="counter"></div>
+  <div class="hint" id="hint"><kbd>&larr;</kbd><kbd>&rarr;</kbd> 이동 <kbd>F</kbd> 전체화면 <kbd>S</kbd> 발표자노트</div>
+  <button class="fullscreen-btn" id="fs-btn" onclick="toggleFullscreen()">&#x26F6;</button>
+
+  <div class="deck" id="deck">
+
+    <!-- SLIDE 1: TITLE -->
+    <div class="slide slide-dark active title-slide" data-notes="[약 15초] 안녕하세요, 복지·혜택 분야 팀 드리미입니다. 저희는 '서류 사진 한 장으로 숨은 복지 혜택을 찾아드리는' 서비스를 만들었습니다. 왜 필요한지, 어떻게 작동하는지, 그리고 직접 시연까지 5분 안에 보여드리겠습니다.">
+      <span class="a overline">2026 AI 챔피언 해커톤 · 복지·혜택</span>
+      <h1 class="a xl text-center">드리미</h1>
+      <p class="a subtitle">서류 사진 한 장으로, 숨은 복지 혜택을 찾아드립니다</p>
+    </div>
+
+    <!-- SLIDE 2: PROBLEM 1 -->
+    <div class="slide slide-gradient" data-notes="[약 25초] 올해 우리나라는 초고령사회에 들어섰습니다. 65세 이상이 1,051만 명, 다섯 명 중 한 명입니다. 그런데 어르신 네 분 중 한 분은 혼자 사시고, 그중 열에 둘은 '도움받을 사람이 없다'고 하셨습니다. 매달 고지서 안에 혜택이 있어도, 곁에서 도와줄 사람이 없는 겁니다.">
+      <span class="a label-tag">PROBLEM</span>
+      <h2 class="a lg text-center">우리는 이미 '초고령사회'입니다</h2>
+      <div class="a stat-grid">
+        <div class="stat-item"><span class="stat-num accent">1,051만</span><span class="stat-label">65세 이상 인구 (명)</span></div>
+        <div class="stat-item"><span class="stat-num">20.3%</span><span class="stat-label">전체 인구 중 비중</span></div>
+        <div class="stat-item"><span class="stat-num">23.7%</span><span class="stat-label">어르신 4명 중 1명, 독거</span></div>
+        <div class="stat-item"><span class="stat-num">18.7%</span><span class="stat-label">"도움받을 사람이 없다"</span></div>
+      </div>
+      <p class="a sm text-muted text-center mt-3">고령사회 → 초고령사회 단 7년, 세계 최고 속도 (2025, 통계청)</p>
+    </div>
+
+    <!-- SLIDE 3: PROBLEM 2 - THREE BARRIERS -->
+    <div class="slide slide-dark" data-notes="[약 20초] 혜택은 고지서 안에 숨어 있지만, 어르신 앞엔 세 겹의 장벽이 있습니다. 첫째, 그런 혜택이 있는지조차 모르고. 둘째, 어려운 행정용어라 이해하기 어렵고. 셋째, 안다 해도 어디서 어떻게 신청하는지 막막합니다.">
+      <h2 class="a lg text-center mb-1">혜택은 고지서 안에 숨어 있습니다</h2>
+      <p class="a sm text-center text-subtle">하지만 어르신 앞엔 세 겹의 장벽이 있습니다</p>
+      <div class="a cards-grid">
+        <div class="glass-card"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></span><div class="card-num">장벽 01</div><h3>존재를 모름</h3><p>받을 수 있는 혜택이 있는지조차 알지 못합니다.</p></div>
+        <div class="glass-card"><span class="card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><div class="card-num">장벽 02</div><h3>이해 어려움</h3><p>한자어·행정용어로 가득한 안내문, 읽어도 무슨 뜻인지 모릅니다.</p></div>
+        <div class="glass-card"><span class="card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span><div class="card-num">장벽 03</div><h3>신청법 모름</h3><p>안다 해도 어디서, 어떻게 신청하는지 막막합니다.</p></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: INSIGHT -->
+    <div class="slide slide-dark" data-notes="[약 20초] 그런데 결정적인 사실이 있습니다. 70세 이상 열 분 중 아홉 분이 스마트폰을 씁니다. 정부 앱은 어려워도, 사진 한 장은 찍으실 수 있습니다. 그래서 저희의 방향은 분명합니다 — [강조] AI가 사람을 대체하는 게 아니라, 사람에게 연결하는 것.">
+      <div class="content-centered">
+        <span class="a label-tag">INSIGHT</span>
+        <h2 class="a xl text-gradient">91%</h2>
+        <p class="a md mt-1">70세 이상 스마트폰 사용률</p>
+        <p class="a sm text-muted mt-2" style="max-width:680px;">정부 앱은 못 써도, <strong>사진 한 장은 찍을 수 있습니다.</strong></p>
+        <div class="a divider"></div>
+        <p class="a md accent mt-1" style="max-width:820px;">"AI가 사람을 대체하는 게 아니라,<br>사람(기관)에게 연결하는 것"</p>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: SOLUTION -->
+    <div class="slide slide-gradient" data-notes="[약 18초] 그래서 만든 것이 드리미입니다. 받은 서류를 사진 한 장으로 찍으면, 숨은 혜택과 어디서 도움받을 수 있는지를 큰 글씨와 음성으로 안내합니다. 한마디로, AI가 알려주고 사람이 도와드립니다.">
+      <span class="a label-tag">SOLUTION</span>
+      <h2 class="a lg text-center" style="max-width:1000px;">서류 사진 한 장이면 충분합니다</h2>
+      <p class="a sm text-center text-muted mt-2" style="max-width:840px;">받은 서류를 사진으로 찍으면, 숨은 혜택의 존재와 어디서 도움받을 수 있는지를</p>
+      <p class="a md text-center mt-1"><span class="hl-emph text-gradient">큰 글씨와 음성</span>으로 안내합니다.</p>
+      <p class="a md accent mt-3">"AI가 알려주고, 사람이 도와드립니다"</p>
+    </div>
+
+    <!-- SLIDE 6: PIPELINE -->
+    <div class="slide slide-dark" data-notes="[약 22초] 작동은 다섯 단계입니다. 사진을 올리면 Gemini가 글자와 금액, 기한을 읽고, 문서를 분류해 쉬운 말로 바꿉니다. 그다음 벡터 DB에서 맞는 혜택을 찾아, 큰 글씨·음성·전화·길찾기로 안내합니다. 이 전 과정이 자동으로, 순식간에 끝납니다.">
+      <h2 class="a lg text-center">어떻게 작동하나요?</h2>
+      <div class="a pipeline">
+        <div class="pstep"><div class="step-glow"></div><div class="pnum">STEP 01</div><div class="ptitle">입력</div><div class="pdesc">받은 서류를 사진 한 장으로 촬영</div></div>
+        <div class="parrow">&rarr;</div>
+        <div class="pstep"><div class="step-glow"></div><div class="pnum">STEP 02</div><div class="ptitle">추출 · OCR</div><div class="pdesc">Gemini 2.5 Flash로 텍스트·금액·기한 추출</div></div>
+        <div class="parrow">&rarr;</div>
+        <div class="pstep"><div class="step-glow"></div><div class="pnum">STEP 03</div><div class="ptitle">분류 · 번역</div><div class="pdesc">문서 유형 분류 + 어르신 눈높이 쉬운말</div></div>
+        <div class="parrow">&rarr;</div>
+        <div class="pstep"><div class="step-glow"></div><div class="pnum">STEP 04</div><div class="ptitle">혜택 매칭</div><div class="pdesc">벡터DB RAG로 맞는 혜택 즉시 매칭</div></div>
+        <div class="parrow">&rarr;</div>
+        <div class="pstep"><div class="step-glow"></div><div class="pnum">STEP 05</div><div class="ptitle">안내 · 연결</div><div class="pdesc">큰 글씨·음성·전화·길찾기로 출력</div></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: CORE TECH -->
+    <div class="slide slide-dark" data-notes="[약 20초] 기술의 핵심은 신뢰입니다. 멀티모달 모델 하나로 읽고·분류하고·번역해 실패 지점을 줄였고, 복지로·보조금24에서 검증한 정보 100건만 벡터 DB에 담았습니다. 검증된 데이터만 참조하니, 없는 혜택을 지어내지 않습니다 — 복지 정보에서 가장 중요한 부분입니다.">
+      <h2 class="a lg text-center mb-1">신뢰할 수 있는 AI</h2>
+      <p class="a sm text-center text-subtle">검증된 데이터만, 지어내지 않습니다</p>
+      <div class="a cards-grid">
+        <div class="glass-card"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg></span><h3>멀티모달 OCR</h3><p>Gemini 2.5 Flash 한 모델로 추출·분류·번역을 통일 — 실패점 최소화.</p><span class="card-tag">Gemini 2.5 Flash</span></div>
+        <div class="glass-card"><span class="card-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span><h3>RAG 혜택 매칭</h3><p>복지로·보조금24 큐레이션 100건을 벡터DB로 구성, 의미 검색으로 즉시 매칭.</p><span class="card-tag">Vector DB · RAG</span></div>
+        <div class="glass-card"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></span><h3>할루시네이션 차단</h3><p>검증된 정책 데이터만 참조 — 잘못된 정보를 지어내지 않습니다.</p><span class="card-tag">신뢰성</span></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: SENIOR MODE -->
+    <div class="slide slide-gradient" data-notes="[약 18초] 화면은 철저히 어르신 중심입니다. 큰 글씨와 큰 버튼, 음성을 함께 제공하고, 한 화면엔 한 가지 행동만 둡니다. 전화·길찾기로 바로 사람에게 연결하고, 국가 웹 접근성 최고 등급을 지켰습니다.">
+      <span class="a label-tag">어르신 모드</span>
+      <h2 class="a lg text-center">어르신을 위한 화면</h2>
+      <ul class="a feat-list">
+        <li><span class="ck">✓</span><span><strong>큰 글씨와 큰 버튼, 음성</strong>을 함께 — 보기 쉽고 누르기 쉽게</span></li>
+        <li><span class="ck">✓</span><span>한 화면에 한 가지 행동만 — 헷갈리지 않게</span></li>
+        <li><span class="ck">✓</span><span>전화걸기 · 길찾기로 <strong>사람에게 바로 연결</strong></span></li>
+        <li><span class="ck">✓</span><span>기다리는 동안 복지 팁과 앱 사용법을 안내</span></li>
+        <li><span class="ck">✓</span><span>국가 표준 <strong>웹 접근성 최고 등급</strong> 준수</span></li>
+      </ul>
+    </div>
+
+    <!-- SLIDE 9: LIVE DEMO -->
+    <div class="slide slide-dark" data-notes="[시연 약 1분 30초] 이제 직접 보여드리겠습니다. 심사위원님, 화면의 QR을 스캔하시면 함께 보실 수 있습니다. ① 이 예시 공문을 사진으로 찍어 업로드 → ② AI가 글자·금액·기한을 읽고 쉬운 말로 번역 → ③ 맞는 혜택을 찾아 → ④ 큰 글씨와 음성으로 안내, 전화·길찾기 버튼까지. 보시는 것처럼, 어려운 공문 한 장이 '받을 수 있는 혜택'과 '전화 한 번'으로 바뀝니다. (※ 입력→결과까지 한 번에 시연, 막히면 캐시된 예시로 진행)">
+      <span class="a label-tag">LIVE DEMO</span>
+      <h2 class="a lg text-center">직접 확인해 보세요</h2>
+      <p class="a sm text-center text-subtle">QR을 스캔하면, 예시 공문으로 바로 체험할 수 있습니다</p>
+      <div class="a demo-row">
+        <div class="qr-box">
+          <div class="qr-frame">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100" height="100" fill="#fff"/>
+              <rect x="6" y="6" width="22" height="22" fill="#0a0a0a"/><rect x="10" y="10" width="14" height="14" fill="#fff"/><rect x="13" y="13" width="8" height="8" fill="#0a0a0a"/>
+              <rect x="72" y="6" width="22" height="22" fill="#0a0a0a"/><rect x="76" y="10" width="14" height="14" fill="#fff"/><rect x="79" y="13" width="8" height="8" fill="#0a0a0a"/>
+              <rect x="6" y="72" width="22" height="22" fill="#0a0a0a"/><rect x="10" y="76" width="14" height="14" fill="#fff"/><rect x="13" y="79" width="8" height="8" fill="#0a0a0a"/>
+              <g fill="#0a0a0a">
+                <rect x="36" y="8" width="5" height="5"/><rect x="46" y="8" width="5" height="5"/><rect x="58" y="10" width="5" height="5"/><rect x="40" y="16" width="5" height="5"/><rect x="52" y="18" width="5" height="5"/><rect x="62" y="20" width="5" height="5"/><rect x="34" y="26" width="5" height="5"/><rect x="46" y="28" width="5" height="5"/>
+                <rect x="8" y="36" width="5" height="5"/><rect x="18" y="38" width="5" height="5"/><rect x="30" y="36" width="5" height="5"/><rect x="42" y="38" width="5" height="5"/><rect x="54" y="36" width="5" height="5"/><rect x="66" y="38" width="5" height="5"/><rect x="78" y="36" width="5" height="5"/><rect x="88" y="40" width="5" height="5"/>
+                <rect x="12" y="48" width="5" height="5"/><rect x="24" y="46" width="5" height="5"/><rect x="38" y="48" width="5" height="5"/><rect x="50" y="50" width="5" height="5"/><rect x="64" y="48" width="5" height="5"/><rect x="76" y="50" width="5" height="5"/><rect x="88" y="52" width="5" height="5"/>
+                <rect x="36" y="60" width="5" height="5"/><rect x="48" y="62" width="5" height="5"/><rect x="60" y="60" width="5" height="5"/><rect x="72" y="62" width="5" height="5"/><rect x="84" y="64" width="5" height="5"/>
+                <rect x="38" y="74" width="5" height="5"/><rect x="50" y="76" width="5" height="5"/><rect x="62" y="74" width="5" height="5"/><rect x="74" y="76" width="5" height="5"/><rect x="86" y="78" width="5" height="5"/>
+                <rect x="40" y="86" width="5" height="5"/><rect x="52" y="88" width="5" height="5"/><rect x="64" y="86" width="5" height="5"/><rect x="76" y="88" width="5" height="5"/><rect x="88" y="86" width="5" height="5"/>
+              </g>
+            </svg>
+          </div>
+          <div class="qr-cap">데모 체험 QR</div>
+          <div class="qr-note">※ 발표 당일 데모 주소로 교체</div>
+        </div>
+        <div class="doc-card">
+          <div class="doc-head"><span class="doc-org">○○구청 복지정책과</span><span class="doc-badge">안내문</span></div>
+          <div class="doc-title">2026년 기초연금 수급 안내</div>
+          <div class="doc-line"><b>대상</b><span>만 65세 이상 어르신</span></div>
+          <div class="doc-line"><b>금액</b><span>월 최대 □□□,□□□원</span></div>
+          <div class="doc-line"><b>신청</b><span>주소지 행정복지센터 · 복지로</span></div>
+          <div class="doc-line"><b>문의</b><span>☎ 129 보건복지상담센터</span></div>
+          <div class="doc-foot">※ 시연용 예시 가상 문서</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 10: IMPACT - SOCIETY -->
+    <div class="slide slide-gradient" data-notes="[약 15초] 효과는 큽니다. 1,051만 명 중 단 10%만 이용해도 연간 2천억에서 5천6백억 원 규모입니다. 정부가 이미 편성했지만 도달하지 못한 복지를, AI로 연결하는 겁니다.">
+      <span class="a label-tag">기대 효과 · 사회</span>
+      <h2 class="a md text-center">복지 사각지대를 AI로 메웁니다</h2>
+      <div class="a big-figure text-gradient mt-2">연 2,000억~5,600억 원</div>
+      <p class="a sm text-muted text-center mt-2" style="white-space:nowrap;">1,051만 명 중 단 <strong>10%</strong>만 이용해도 — 정부가 편성했으나 도달하지 못한 복지를 연결합니다.</p>
+    </div>
+
+    <!-- SLIDE 12: SCALABILITY -->
+    <div class="slide slide-dark" data-notes="[약 12초] 그리고 어르신에서 멈추지 않습니다. 모듈만 바꾸면 임산부·외국인·장애인·청년까지, 정보 격차로 혜택을 놓치는 누구에게나 확장됩니다.">
+      <h2 class="a lg text-center">어르신을 넘어, 전 국민에게</h2>
+      <p class="a sm text-center text-muted mt-2" style="max-width:820px;">동일 파이프라인에 모듈만 교체하면 — 정보 격차로 혜택을 놓치는 누구에게나 적용됩니다.</p>
+      <div class="a tag-row">
+        <span class="tag">어르신</span>
+        <span class="tag muted">임산부</span>
+        <span class="tag muted">외국인</span>
+        <span class="tag muted">장애인</span>
+        <span class="tag muted">청년</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 13: CLOSING -->
+    <div class="slide slide-dark closing-slide" data-notes="[약 10초] AI가 알려주고, 사람이 도와드립니다. 팀 드리미였습니다. 감사합니다.">
+      <h1 class="a closing-title text-gradient text-center">AI가 알려주고,<br>사람이 도와드립니다</h1>
+      <p class="a closing-sub">팀 드리미 — 고용노동부 지능정보화기획팀</p>
+    </div>
+
+  </div>
+
+  <div class="notes-panel" id="notes-panel">
+    <div class="notes-label">발표자 노트</div>
+    <div id="notes-content"><strong>S</strong> 키를 누르면 발표자 노트가 표시됩니다.</div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      var deck = document.getElementById('deck');
+      var slides = Array.from(deck.querySelectorAll('.slide'));
+      var total = slides.length;
+      var current = 0;
+      var notesVisible = false;
+      var progressBar = document.getElementById('progress');
+      var counter = document.getElementById('counter');
+      var notesPanel = document.getElementById('notes-panel');
+      var notesContent = document.getElementById('notes-content');
+      var hintEl = document.getElementById('hint');
+      var fsBtn = document.getElementById('fs-btn');
+
+      function readHash() {
+        var hash = window.location.hash;
+        if (hash && /^#\d+$/.test(hash)) {
+          var idx = parseInt(hash.substring(1), 10) - 1;
+          if (idx >= 0 && idx < total) {
+            slides[current].classList.remove('active');
+            current = idx;
+            slides[current].classList.add('active');
+          }
+        }
+      }
+      function writeHash() { history.replaceState(null, '', '#' + (current + 1)); }
+
+      function updateUI() {
+        progressBar.style.width = (((current + 1) / total) * 100) + '%';
+        counter.textContent = (current + 1) + ' / ' + total;
+        notesContent.textContent = slides[current].getAttribute('data-notes') || '이 슬라이드에는 노트가 없습니다.';
+        var isLight = slides[current].classList.contains('slide-light');
+        counter.classList.toggle('on-light', isLight);
+        hintEl.classList.toggle('on-light', isLight);
+        fsBtn.classList.toggle('on-light', isLight);
+        writeHash();
+      }
+      function goTo(index) {
+        if (index < 0 || index >= total || index === current) return;
+        slides[current].classList.remove('active');
+        current = index;
+        slides[current].classList.add('active');
+        updateUI();
+      }
+      function next() { goTo(current + 1); }
+      function prev() { goTo(current - 1); }
+
+      document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        switch (e.key) {
+          case 'ArrowRight': case 'ArrowDown': e.preventDefault(); next(); break;
+          case 'ArrowLeft': case 'ArrowUp': e.preventDefault(); prev(); break;
+          case ' ': e.preventDefault(); if (e.shiftKey) { prev(); } else { next(); } break;
+          case 'Home': e.preventDefault(); goTo(0); break;
+          case 'End': e.preventDefault(); goTo(total - 1); break;
+          case 'f': case 'F': e.preventDefault(); toggleFullscreen(); break;
+          case 's': case 'S': e.preventDefault(); toggleNotes(); break;
+        }
+      });
+
+      deck.addEventListener('click', function (e) {
+        if (e.target.closest('a, button, code, pre, .glass-card')) return;
+        var rect = deck.getBoundingClientRect();
+        if ((e.clientX - rect.left) > rect.width / 2) { next(); } else { prev(); }
+      });
+
+      var touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+      deck.addEventListener('touchstart', function (e) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; touchStartTime = Date.now(); }, { passive: true });
+      deck.addEventListener('touchend', function (e) {
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        var dy = e.changedTouches[0].clientY - touchStartY;
+        if ((Date.now() - touchStartTime) > 500) return;
+        if (Math.abs(dx) < 50) return;
+        if (Math.abs(dy) > Math.abs(dx)) return;
+        if (dx < 0) { next(); } else { prev(); }
+      }, { passive: true });
+
+      window.toggleFullscreen = function () {
+        if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(function () {}); }
+        else { document.exitFullscreen().catch(function () {}); }
+      };
+      function toggleNotes() { notesVisible = !notesVisible; notesPanel.classList.toggle('visible', notesVisible); }
+      window.toggleNotes = toggleNotes;
+
+      window.addEventListener('hashchange', function () { readHash(); updateUI(); });
+      readHash();
+      updateUI();
+    })();
+  </script>
+</body>
+</html>

@@ -33,9 +33,16 @@ hackathon/
 │       ├── rag.py           # 혜택 정책 매칭
 │       └── gemini_client.py # Gemini 클라이언트 싱글톤
 ├── data/corpus.json         # 혜택 정책 코퍼스 (팀원 제공 / 샘플 포함)
+├── presentation/            # 발표자료 (드리미_발표.html — 12장 단일 HTML)
 ├── requirements.txt
 └── .env.example
 ```
+
+## 발표자료
+
+`presentation/드리미_발표.html` — 발표용 슬라이드(12장, 단일 HTML, 자체완결). 브라우저로 바로 열면 됩니다.
+`←`/`→` 이동 · `F` 전체화면 · `S` 발표자 노트(타이밍 대본 포함) · `Ctrl+P`(가로)로 PDF 저장.
+발표 5분 기준(시연 ~1분 30초 포함)으로 발표자 노트에 슬라이드별 시간 배분을 적어두었습니다. 출처·라이선스는 `SOURCE_LOG.md` §6.
 
 ## 실행 방법
 
