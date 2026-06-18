@@ -172,14 +172,19 @@
       transition: opacity .4s;
     }
     .tip-carousel .tip-text.fading { opacity: 0; }
+    .tip-carousel .tip-ico { width: 1.3em; height: 1.3em; flex: 0 0 auto; margin-right: 8px; color: var(--accent); }
 
     /* ════ 화면 3: 결과 ════ */
-    .summary-card .badge {
-      display: inline-block; font-size: 0.78em; font-weight: 800;
-      padding: 4px 14px; border-radius: 999px; margin-bottom: 12px;
-      color: #fff; background: var(--accent);
+    .summary-card { padding: 0; overflow: hidden; }
+    .summary-head {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--ink); color: #fff;
+      padding: 14px 18px; font-size: 1.05em; font-weight: 800;
     }
-    .summary-card h2 { margin: 0 0 12px; font-size: 1.18em; color: var(--ink); }
+    .summary-head .ico { color: #fff; width: 1.2em; height: 1.2em; }
+    .summary-body { padding: 18px; }
+    .summary-card .doc-title { font-size: 1.5em; font-weight: 900; color: var(--ink); margin: 0 0 14px; line-height: 1.3; }
+    .summary-card .doc-title[hidden] { display: none; }
     .easy-text { font-size: 1.12em; line-height: 1.85; white-space: pre-wrap; color: var(--ink); }
     /* 주의 박스: 빨간 배경 + 진한 빨강 글씨 + 경고 아이콘 */
     .watch-out {
@@ -189,6 +194,8 @@
       border-radius: 12px; padding: 14px 16px; margin: 14px 0 0;
     }
     .watch-out .ico { flex: 0 0 auto; width: 22px; height: 22px; margin-top: 2px; }
+    /* TTS가 읽고 있는 섹션 강조 */
+    .tts-reading { box-shadow: 0 0 0 3px var(--accent), 0 6px 18px rgba(20,87,214,.22) !important; transition: box-shadow .2s; }
     .facts { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
     .fact { flex: 1; min-width: 120px; padding: 12px 14px; border-radius: 14px; background: #fff7e6; border: 1px solid #ffd666; }
     .fact .k { font-size: 0.72em; color: #ad6800; font-weight: 800; }
@@ -212,29 +219,33 @@
 
     /* 혜택 카드 3단계 */
     .policy {
-      background: #fff; border: 1px solid var(--line); border-left: 7px solid var(--accent);
-      border-radius: 16px; padding: 18px; margin-bottom: 14px;
+      background: #fff; border: 1px solid var(--line);
+      border-radius: 16px; margin-bottom: 14px; overflow: hidden;
       box-shadow: 0 2px 10px rgba(20, 35, 63, 0.06);
     }
-    .policy-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    /* 컬러 헤더: 혜택 이름(좌) + tier 알약(우) */
+    .policy-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 13px 16px; color: #fff;
+    }
+    .policy .name { font-size: 1.12em; font-weight: 900; color: #fff; }
     .policy .tag {
       display: inline-block; font-size: 0.76em; font-weight: 900;
-      padding: 4px 14px; border-radius: 999px; color: #fff; flex: 0 0 auto;
+      padding: 4px 12px; border-radius: 999px; flex: 0 0 auto;
+      background: rgba(255, 255, 255, 0.26); color: #fff;
     }
-    .policy .name { font-size: 1.1em; font-weight: 900; color: var(--ink); }
-    .policy .amount-big { font-size: 1.35em; font-weight: 900; margin: 8px 0 4px; }
+    .policy-body { padding: 16px; }
+    .policy .amount-big { font-size: 1.35em; font-weight: 900; margin: 0 0 4px; line-height: 1.3; }
+    .policy .amount-note { display: block; font-size: 0.6em; font-weight: 700; color: var(--ink-muted); margin-top: 3px; line-height: 1.45; }
     .policy .row { margin: 5px 0; font-size: 0.98em; color: var(--ink); }
     .policy .row .k { color: var(--ink-muted); font-weight: 800; }
 
-    /* 단계별 색 */
-    .policy.tier-urgent { border-left-color: var(--urgent); }
-    .policy.tier-urgent .tag { background: var(--urgent); }
+    /* 단계별 헤더 색 */
+    .policy.tier-urgent .policy-head { background: var(--urgent); }
     .policy.tier-urgent .amount-big { color: var(--urgent); }
-    .policy.tier-rec { border-left-color: var(--rec); }
-    .policy.tier-rec .tag { background: var(--rec); }
+    .policy.tier-rec .policy-head { background: var(--rec); }
     .policy.tier-rec .amount-big { color: var(--rec); }
-    .policy.tier-info { border-left-color: var(--info); }
-    .policy.tier-info .tag { background: var(--info); }
+    .policy.tier-info .policy-head { background: var(--info); }
     .policy.tier-info .amount-big { color: var(--info); }
 
     /* 전화(초록)·지도(파랑) 알약 버튼 */
@@ -302,6 +313,15 @@
       </symbol>
       <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a6.5 6.5 0 0 0-4 11.6c.7.6 1 1.4 1 2.4h6c0-1 .3-1.8 1-2.4A6.5 6.5 0 0 0 12 2z"/>
+      </symbol>
+      <symbol id="i-won" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 7l3 10 5-12 5 12 3-10"/><path d="M3 11h18"/>
+      </symbol>
+      <symbol id="i-health" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><path d="M12 8v8"/><path d="M8 12h8"/>
+      </symbol>
+      <symbol id="i-fire" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3c0 4-4 5-4 9a4 4 0 0 0 8 0c0-2-1-3-1-4 2 1 2.5 3 2.5 4.2A5.5 5.5 0 0 1 12 21a5.5 5.5 0 0 1-5.5-5.5C6.5 10 12 8.5 12 3z"/>
       </symbol>
       <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 7.5v13"/><path d="M3 5.5a1 1 0 0 1 1-1h4.5A3.5 3.5 0 0 1 12 8a3.5 3.5 0 0 1 3.5-3.5H20a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1h-5a3 3 0 0 0-3 1.5 3 3 0 0 0-3-1.5H4a1 1 0 0 1-1-1z"/>
@@ -380,7 +400,7 @@
           <p class="loading-note">분석은 보통 10초쯤 걸려요. 잠시만 기다려 주세요.</p>
         </div>
         <div class="tip-carousel card" id="tipCarousel" aria-live="polite">
-          <p class="tip-label">💡 알아두면 좋아요</p>
+          <p class="tip-label"><svg class="ico"><use href="#i-bulb"/></svg> 알아두면 좋아요</p>
           <p class="tip-text" id="tipText"></p>
         </div>
       </section>
@@ -390,13 +410,15 @@
         <div id="resultError"></div>
 
         <div class="card summary-card">
-          <span class="badge" id="docBadge" hidden></span>
-          <h2><svg class="ico"><use href="#i-bulb"/></svg>쉬운 설명</h2>
-          <div class="easy-text" id="easyText"></div>
-          <div id="watchBox"></div>
-          <div class="facts" id="factsBox"></div>
-          <div id="glossaryBox"></div>
-          <div id="extraBox"></div>
+          <div class="summary-head"><svg class="ico"><use href="#i-bulb"/></svg>AI가 쉽게 안내해 드려요</div>
+          <div class="summary-body">
+            <div class="doc-title" id="docTitle" hidden></div>
+            <div class="easy-text" id="easyText"></div>
+            <div id="watchBox"></div>
+            <div class="facts" id="factsBox"></div>
+            <div id="glossaryBox"></div>
+            <div id="extraBox"></div>
+          </div>
         </div>
 
         <div class="section-title"><svg class="ico"><use href="#i-gift"/></svg>받을 수 있는 혜택</div>
@@ -455,43 +477,49 @@
 
     // ════ TTS ════
     const btnTTS = document.getElementById("btnTTS");
+    let ttsTarget = null;  // 현재 읽고 있는(강조된) 섹션 요소
+    function clearTtsHighlight() {
+      if (ttsTarget) { ttsTarget.classList.remove("tts-reading"); ttsTarget = null; }
+    }
     function stopTTS() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       btnTTS.classList.remove("speaking");
+      clearTtsHighlight();
     }
     function readableTextFor(screenId) {
       if (screenId === "screen-home")
-        return "드리미, 쉬운문서 도우미입니다. 고지서나 안내문을 찍으면 쉽게 설명해 드려요. 사진 찍기 또는 사진 골라오기 버튼을 누르세요.";
+        return { text: "드리미, 쉬운문서 도우미입니다. 고지서나 안내문을 찍으면 쉽게 설명해 드려요. 사진 찍기 또는 사진 골라오기 버튼을 누르세요.", el: null };
       if (screenId === "screen-loading")
-        return "문서를 살펴보고 있어요. 잠시만 기다려 주세요.";
+        return { text: "문서를 살펴보고 있어요. 잠시만 기다려 주세요.", el: null };
       if (screenId === "screen-result") {
-        // 화면(뷰포트)에 보이는 첫 섹션만 읽어준다
+        // 화면(뷰포트)에 보이는 첫 섹션만 읽어준다.
+        // 쉬운 설명 카드 + 각 혜택 카드를 개별 섹션으로 구분한다.
         const headerH = (document.querySelector("header")?.offsetHeight || 0) + 8;
-        const sections = [
-          { el: document.querySelector("#screen-result .summary-card"), prefix: "" },
-          { el: document.getElementById("policyBox"), prefix: "받을 수 있는 혜택. " },
-        ];
-        for (const s of sections) {
-          const txt = s.el ? s.el.innerText.trim() : "";
-          if (txt && s.el.getBoundingClientRect().bottom > headerH)
-            return s.prefix + txt.replace(/\n+/g, ". ");
+        const sections = [document.querySelector("#screen-result .summary-card")];
+        document.querySelectorAll("#policyBox .policy").forEach((el) => sections.push(el));
+        const clean = (el) => el.innerText.trim().replace(/\n+/g, ". ");
+        for (const el of sections) {
+          if (el && el.innerText.trim() && el.getBoundingClientRect().bottom > headerH)
+            return { text: clean(el), el };
         }
-        const first = sections.find((s) => s.el && s.el.innerText.trim());
-        return first ? first.prefix + first.el.innerText.trim().replace(/\n+/g, ". ") : "";
+        const first = sections.find((el) => el && el.innerText.trim());
+        return first ? { text: clean(first), el: first } : { text: "", el: null };
       }
-      return "";
+      return { text: "", el: null };
     }
     btnTTS.addEventListener("click", () => {
       if (!window.speechSynthesis) { alert("이 브라우저는 읽어주기를 지원하지 않아요."); return; }
       if (window.speechSynthesis.speaking) { stopTTS(); return; }
       const screenId = document.querySelector(".screen.active").id;
-      const text = readableTextFor(screenId);
+      const { text, el } = readableTextFor(screenId);
       if (!text.trim()) return;
+      clearTtsHighlight();
+      if (el) { el.classList.add("tts-reading"); ttsTarget = el; }
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "ko-KR";
       u.rate = ttsRates[fontLevel];   // 글자 크기 단계에 맞춰 읽기 속도 조절
-      u.onend = () => btnTTS.classList.remove("speaking");
-      u.onerror = () => btnTTS.classList.remove("speaking");
+      u.onend = () => { btnTTS.classList.remove("speaking"); clearTtsHighlight(); };
+      u.onerror = () => { btnTTS.classList.remove("speaking"); clearTtsHighlight(); };
       btnTTS.classList.add("speaking");
       window.speechSynthesis.speak(u);
       btnTTS.blur();                  // 터치 후 hover/포커스 잔상 제거
@@ -527,26 +555,27 @@
 
     // ── 4단계 진행 ──
     const TIPS = [
-      "📷 글씨가 잘 보이게 밝은 곳에서 반듯하게 찍어주세요.",
-      "🔊 화면 위 스피커 버튼을 누르면 내용을 읽어드려요.",
-      "👵 ‘어르신 모드’를 켜면 글씨가 더 커져요.",
-      "💰 만 65세 이상이면 매달 ‘기초연금’을 받을 수 있어요.",
-      "🏥 소득·재산이 적으면 ‘건강보험료’를 줄여드려요.",
-      "🔥 난방·전기요금이 부담되면 ‘에너지바우처’를 신청해 보세요.",
-      "📞 도움이 필요하면 보건복지상담 129로 전화하세요.",
+      { icon: "i-camera", text: "글씨가 잘 보이게 밝은 곳에서 반듯하게 찍어주세요." },
+      { icon: "i-volume", text: "화면 위 스피커 버튼을 누르면 내용을 읽어드려요." },
+      { icon: "i-person", text: "‘어르신 모드’를 켜면 글씨가 더 커져요." },
+      { icon: "i-won", text: "만 65세 이상이면 매달 ‘기초연금’을 받을 수 있어요." },
+      { icon: "i-health", text: "소득·재산이 적으면 ‘건강보험료’를 줄여드려요." },
+      { icon: "i-fire", text: "난방·전기요금이 부담되면 ‘에너지바우처’를 신청해 보세요." },
+      { icon: "i-phone", text: "도움이 필요하면 보건복지상담 129로 전화하세요." },
     ];
+    const renderTip = (t) => `<svg class="ico tip-ico"><use href="#${t.icon}"/></svg><span>${t.text}</span>`;
     let tipTimer = null;
     function startTips() {
       const el = document.getElementById("tipText");
       if (!el) return;
       let i = Math.floor(Math.random() * TIPS.length);
-      el.textContent = TIPS[i];
+      el.innerHTML = renderTip(TIPS[i]);
       clearInterval(tipTimer);
       tipTimer = setInterval(() => {
         el.classList.add("fading");
         setTimeout(() => {
           i = (i + 1) % TIPS.length;
-          el.textContent = TIPS[i];
+          el.innerHTML = renderTip(TIPS[i]);
           el.classList.remove("fading");
         }, 400);
       }, 5000);
@@ -590,7 +619,7 @@
     function renderError(msg) {
       lastResult = null;
       document.getElementById("resultError").innerHTML = `<div class="error"><svg class="ico"><use href="#i-alert"/></svg>${escapeHtml(msg)}</div>`;
-      document.getElementById("docBadge").hidden = true;
+      document.getElementById("docTitle").hidden = true;
       document.getElementById("easyText").textContent = "결과를 불러오지 못했어요.";
       document.getElementById("factsBox").innerHTML = "";
       document.getElementById("glossaryBox").innerHTML = "";
@@ -603,11 +632,11 @@
       document.getElementById("resultError").innerHTML = "";
       const a = data.analysis || {};
 
-      const badge = document.getElementById("docBadge");
-      if (a.doc_type) { badge.textContent = a.doc_type; badge.hidden = false; } else badge.hidden = true;
+      const docTitle = document.getElementById("docTitle");
+      if (a.doc_type) { docTitle.textContent = a.doc_type; docTitle.hidden = false; } else docTitle.hidden = true;
 
       document.getElementById("easyText").textContent =
-        data.easy_translation || a.summary || "쉬운 설명을 만들지 못했어요.";
+        stripEmoji(data.easy_translation || a.summary) || "쉬운 설명을 만들지 못했어요.";
 
       // 주의사항(watch_out): 값이 있을 때만 빨간 주의 박스 표시
       const wo = (a.watch_out || data.watch_out || "").trim();
@@ -660,7 +689,14 @@
       const rows = [];
       if (p.how_to_apply) rows.push(prow("신청", p.how_to_apply));
       if (p.source) rows.push(prow("출처", p.source));
-      const amountBig = p.amount ? `<div class="amount-big">${escapeHtml(p.amount)}</div>` : "";
+      // 금액: 괄호 안 부가설명을 작은 글씨로 분리해 한 줄 더 깔끔하게
+      const amt = (p.amount || "").trim();
+      const am = amt.match(/^(.*?)\s*[\(（](.+)[\)）]\s*$/);
+      const amMain = am ? am[1].trim() : amt;
+      const amNote = am ? am[2].trim() : "";
+      const amountBig = amMain
+        ? `<div class="amount-big">${escapeHtml(amMain)}${amNote ? `<span class="amount-note">${escapeHtml(amNote)}</span>` : ""}</div>`
+        : "";
       const callBtn = p.phone ? `<a class="call" href="tel:${escapeHtml(p.phone)}"><svg class="ico"><use href="#i-phone"/></svg>전화하기</a>` : "";
       const mapBtn = p.visit ? `<a class="map" href="https://map.naver.com/v5/search/${encodeURIComponent(p.visit)}" target="_blank" rel="noopener"><svg class="ico"><use href="#i-pin"/></svg>위치 보기</a>` : "";
       return `<div class="policy ${tier.cls}">
@@ -668,9 +704,11 @@
           <div class="name">${escapeHtml(p.name || "혜택")}</div>
           <span class="tag">${tier.label}</span>
         </div>
-        ${amountBig}
-        ${rows.join("")}
-        ${(callBtn || mapBtn) ? `<div class="policy-actions">${callBtn}${mapBtn}</div>` : ""}
+        <div class="policy-body">
+          ${amountBig}
+          ${rows.join("")}
+          ${(callBtn || mapBtn) ? `<div class="policy-actions">${callBtn}${mapBtn}</div>` : ""}
+        </div>
       </div>`;
     }
 
@@ -682,6 +720,10 @@
     function prow(k, v) { return `<div class="row"><span class="k">${escapeHtml(k)}:</span> ${escapeHtml(v)}</div>`; }
     function escapeHtml(s) {
       return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+    // 표시용 이모지·그림문자 제거(번역 결과 안전망)
+    function stripEmoji(s) {
+      return String(s || "").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, "").replace(/ {2,}/g, " ").trim();
     }
 
     // ── 카카오톡 공유 ──
@@ -695,8 +737,21 @@
       if (a.amount) text += `\n금액: ${a.amount}`;
       if (a.deadline) text += `\n기한: ${a.deadline}`;
       if (top) text += `\n\n추천 혜택: ${top.name}`;
+      // 결과를 서버에 저장하고 짧은 공유 URL 생성
+      let url = "";
       try {
-        if (navigator.share) await navigator.share({ title: "드리미", text });
+        const res = await fetch(`${API_BASE}/api/share`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(lastResult),
+        });
+        if (res.ok) {
+          const { code } = await res.json();
+          url = `${location.origin}${location.pathname}?s=${code}`;
+          text += `\n\n결과 보기: ${url}`;
+        }
+      } catch (_) {}
+      try {
+        if (navigator.share) await navigator.share(url ? { title: "드리미", text, url } : { title: "드리미", text });
         else { await navigator.clipboard.writeText(text); alert("내용을 복사했어요. 카카오톡에 붙여넣어 보내세요."); }
       } catch (_) {}
     });
@@ -743,6 +798,16 @@
     brandHome.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goHome(); }
     });
+
+    // 공유 링크(?s=코드)로 열렸을 때: 저장된 결과를 불러와 결과 화면 표시
+    (async () => {
+      const code = new URLSearchParams(location.search).get("s");
+      if (!code) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/share/${encodeURIComponent(code)}`);
+        if (res.ok) { renderResult(await res.json()); showScreen("screen-result"); }
+      } catch (_) {}
+    })();
   </script>
 </body>
 </html>

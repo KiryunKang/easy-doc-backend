@@ -1,4 +1,5 @@
 import asyncio
+import secrets
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
@@ -8,6 +9,10 @@ from app.services import analysis, ocr, translation
 from app.services.rag import get_engine
 
 router = APIRouter(prefix="/api", tags=["document"])
+
+# 공유용 결과 임시 저장소 (인메모리 — 서버 재시작 시 초기화). 데모용.
+_SHARE_STORE: dict[str, dict] = {}
+_SHARE_MAX = 500  # 메모리 보호용 상한
 
 _LOG_PREVIEW = 300  # 로그에 남길 텍스트 최대 길이(민감정보는 마스킹됨)
 
@@ -91,3 +96,26 @@ async def analyze_text(req: AnalyzeTextRequest):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="text 가 비어 있습니다.")
     return await _run_pipeline(req.text, source="analyze-text")
+
+
+@router.post("/share")
+async def create_share(payload: dict):
+    """결과(JSON)를 저장하고 짧은 공유 코드를 발급. 카카오톡 등 링크 공유용."""
+    if not payload:
+        raise HTTPException(status_code=400, detail="공유할 내용이 없습니다.")
+    # 상한 초과 시 가장 오래된 항목부터 정리 (FIFO, dict 삽입순)
+    while len(_SHARE_STORE) >= _SHARE_MAX:
+        _SHARE_STORE.pop(next(iter(_SHARE_STORE)))
+    code = secrets.token_urlsafe(4)  # ~6자
+    _SHARE_STORE[code] = payload
+    logger.info("[share] 결과 저장 code=%s (총 %d건)", code, len(_SHARE_STORE))
+    return {"code": code}
+
+
+@router.get("/share/{code}")
+async def get_share(code: str):
+    """공유 코드로 저장된 결과 조회."""
+    data = _SHARE_STORE.get(code)
+    if data is None:
+        raise HTTPException(status_code=404, detail="공유된 결과를 찾을 수 없어요.")
+    return data
