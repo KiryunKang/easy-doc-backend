@@ -40,6 +40,19 @@ class RAGEngine:
             return
 
         self.policies = json.loads(path.read_text(encoding="utf-8"))
+
+        # 노인 대상 앱 — 노인과 무관한 분야(청년·아동·보육 등)는 매칭 대상에서 제외
+        exclude = tuple(settings.exclude_categories)
+        if exclude:
+            before = len(self.policies)
+            self.policies = [
+                p
+                for p in self.policies
+                if p.get("category", "").split("/")[0] not in exclude
+            ]
+            if before != len(self.policies):
+                print(f"[RAG] 노인 무관 분야 {before - len(self.policies)}건 제외 → {len(self.policies)}건")
+
         if not self.policies:
             print("[RAG] corpus 가 비어 있습니다.")
             return

@@ -13,6 +13,9 @@ class DocumentAnalysis(BaseModel):
     required_actions: list[str] = Field(
         default_factory=list, description="사용자가 해야 할 일"
     )
+    watch_out: str = Field(
+        "", description="놓치면 불이익이 생기는 주의사항(연체료·자격 상실 등). 없으면 빈 문자열"
+    )
 
 
 class MatchedPolicy(BaseModel):

@@ -86,7 +86,10 @@ Desktop\hackathon\
 9. [x] **쉬운 설명(번역) 간결화** — 노인 대상이라 핵심만 3~4문장, 신청 절차/은행·전화 코드/일련번호 생략(`translation.py` 프롬프트). 783자→115자로 개선. 별표/마크다운 기호도 제거.
 10. [x] **로깅 + PII 마스킹 추가** (`app/logging_utils.py` 신규 + `document.py`): 입력 텍스트/OCR결과→분석결과→쉬운번역→매칭정책 전 과정 로깅. 마스킹: 이름(김복순→김**), 주민번호, 전화(가운데), 납부번호(뒤4자리만). 일반 호칭(선생님/어머님 등)은 마스킹 제외. uvicorn 콘솔에 UTF-8로 출력.
 11. [x] **프론트 버그 2건 수정** — ① `run()`이 thunk 실행 전 `input.value=""`로 비워서 `callProcess(files[0])`가 undefined 전송→422 나던 것: change에서 파일을 `const f`로 미리 캡처하도록 수정. ② FastAPI 422 detail(배열)이 `[object Object]`로 표시되던 것: `formatDetail()` 추가. 백엔드엔 422 진단 핸들러(`main.py`) 추가.
-12. [ ] (선택) git 커밋/푸시 — 백엔드 변경(로깅/마스킹/번역간결화/422핸들러) 커밋 대기. 프론트 `index.html`은 untracked(다른 세션 관리).
+12. [x] **watch_out 주의 박스** — `DocumentAnalysis.watch_out`(schemas) + analysis 프롬프트 추가. 기한 놓치면 생기는 불이익 한 문장(없으면 빈값). 프론트는 쉬운 설명 아래 빨간 박스(`.watch-out`, i-alert 아이콘), 값 있을 때만.
+13. [x] **노인 대상 혜택만 매칭** — `config.exclude_categories`(청년/아동/보육/임산부/청소년/구직자/실업자) + `rag.py load()`에서 category '/' 앞 접두사로 필터. 100건 중 25건 제외 → 75건 임베딩. 노인 무관 혜택(청년/아동 등) 매칭에서 빠짐.
+14. UI 다듬기(프론트, 다른 세션과 공유): 결과에서 '핵심 내용'(key_points) 섹션 제거 / 혜택 카드 '대상'(eligibility) 제거 + 헤더(정책명 좌·tier필 우) / 전화·위치 버튼 없으면 숨김 / 분석중 단계 세로 연결선(완료=초록·체크) + 안내문구 + 팁 캐러셀 / TTS는 뷰포트 보이는 첫 섹션만 읽기(속도는 fontLevel 연동 ttsRates).
+15. [ ] (선택) git 커밋/푸시 — 백엔드 변경(로깅/마스킹/번역간결화/422핸들러/watch_out/노인필터) 커밋 대기. 프론트 `index.html`은 다른 세션과 공유.
 
 ## 다음 세션 시작 멘트(붙여넣기용)
 "Desktop\hackathon 프로젝트 이어서 하자. handoff.md 읽고, 다음 할 일 3번(rag.py 런타임 검증)부터 진행해줘. venv는 C:\Users\Moel\rag_test\.venv."

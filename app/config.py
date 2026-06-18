@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     corpus_path: str = "data/corpus.json"
     rag_top_k: int = 3
     rag_score_threshold: float = 0.35  # 코사인 유사도 컷 (미만 제외)
+    # 노인 대상 앱 — 노인과 무관한 분야는 매칭 제외(category 의 '/' 앞 접두사 기준)
+    exclude_categories: list[str] = [
+        "청년", "아동", "보육", "임산부", "청소년", "구직자", "실업자",
+    ]
 
     # CORS
     cors_origins: list[str] = ["*"]
