@@ -82,9 +82,11 @@ Desktop\hackathon\
 6. [x] `/api/process` 검증 — 한글 재산세 고지서 테스트 이미지(`tests/sample_notice.png`, `tests/`의 생성 스크립트는 /tmp/make_img.py 참고) 업로드 → **Gemini OCR 정확 추출**(기관·금액·기한·전화·납부번호) → 분석/번역/RAG 정상.
 7. [x] **팀원 corpus 100건 적용 완료.** 팀원이 origin/main에 올린 corpus(title/benefit/signals/region/age_min 등 다른 스키마 + hybrid rag.py)를 데이터만 가져와 **우리 12필드 스키마로 변환**(title→name, benefit→amount, apply→how_to_apply, keywords+signals→공백string, priority int 1~2/3/4~5→high/medium/low). 변환은 재사용 스크립트 `scripts/convert_team_corpus.py`로 수행(검증됨). 단 **팀원이 우리 12필드 스키마를 그대로 채택**(2026-06-18, e9ddcf4/547372d)해서 이제 변환 불필요 — 팀원이 우리 merge커밋(8c71a7e) 위에서 phone/visit/related_doc_types를 100/100 채워 푸시했고 백엔드 코드는 안 건드림 → `git merge --ff-only origin/main`로 그냥 반영됨. 변환기는 팀원이 옛 스키마(title/benefit/signals)로 회귀할 경우 대비 보험으로 보관. 백엔드 코드(ocr=Gemini, rag, schemas)는 **우리 것 유지**(팀원 hybrid rag는 미채택, 사용자 결정). phone/visit는 corpus에 데이터 없어 빈값(프론트 전화/지도 버튼 비활성). related_doc_types도 빈배열이라 doc_type 가점은 현재 무효, 임베딩 매칭만 작동. 100건 매칭 검증 완료(세금/건강보험/돌봄 등). **phone/visit/related_doc_types 100% 채워짐**(팀원이 채워 푸시 → ff로 반영). doc_type↔related_doc_types 가점도 이제 실제 작동. SOURCE_LOG.md는 팀원이 현재 스키마/스택에 맞춰 복원함.
    - **검증 시 OCR 재호출 금지**: `tests/sample_notice.ocr.txt`에 캐싱된 OCR 텍스트를 `/api/analyze-text`로 넣어 검증(Gemini OCR 호출 0). 이미지 OCR 자체를 새로 테스트할 때만 `/api/process` 사용.
-8. [ ] 프론트엔드 CORS 주소를 `.env`의 `CORS_ORIGINS`에 추가
-9. [ ] (선택) 번역 출력이 마크다운(**/*) 섞여 나옴 — 노인 대상이면 프롬프트에서 순수 텍스트로 다듬을지 검토
-10. [ ] (선택) git 커밋/푸시 — 이번 변경(OCR=Gemini, corpus 스키마 정렬) 아직 커밋 안 됨
+8. [x] 프론트엔드 연결 완료(로컬 검증). `frontend/index.html`(단일 정적 HTML, `API_BASE="http://localhost:8000"`, /api/process·/api/analyze-text 호출, phone→tel·visit→네이버지도). 프론트는 정적서버로 기동: `py -m http.server 5173 --directory frontend` → http://localhost:5173. 백엔드 CORS `*`라 통과 검증됨(Origin: localhost:5173 → access-control-allow-origin: *). 운영 시 좁히려면 `.env`에 `CORS_ORIGINS=["http://localhost:5173"]`.
+9. [x] **쉬운 설명(번역) 간결화** — 노인 대상이라 핵심만 3~4문장, 신청 절차/은행·전화 코드/일련번호 생략(`translation.py` 프롬프트). 783자→115자로 개선. 별표/마크다운 기호도 제거.
+10. [x] **로깅 + PII 마스킹 추가** (`app/logging_utils.py` 신규 + `document.py`): 입력 텍스트/OCR결과→분석결과→쉬운번역→매칭정책 전 과정 로깅. 마스킹: 이름(김복순→김**), 주민번호, 전화(가운데), 납부번호(뒤4자리만). 일반 호칭(선생님/어머님 등)은 마스킹 제외. uvicorn 콘솔에 UTF-8로 출력.
+11. [x] **프론트 버그 2건 수정** — ① `run()`이 thunk 실행 전 `input.value=""`로 비워서 `callProcess(files[0])`가 undefined 전송→422 나던 것: change에서 파일을 `const f`로 미리 캡처하도록 수정. ② FastAPI 422 detail(배열)이 `[object Object]`로 표시되던 것: `formatDetail()` 추가. 백엔드엔 422 진단 핸들러(`main.py`) 추가.
+12. [ ] (선택) git 커밋/푸시 — 백엔드 변경(로깅/마스킹/번역간결화/422핸들러) 커밋 대기. 프론트 `index.html`은 untracked(다른 세션 관리).
 
 ## 다음 세션 시작 멘트(붙여넣기용)
 "Desktop\hackathon 프로젝트 이어서 하자. handoff.md 읽고, 다음 할 일 3번(rag.py 런타임 검증)부터 진행해줘. venv는 C:\Users\Moel\rag_test\.venv."

@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>드리미 — 쉬운문서 도우미</title>
+  <style>
+    :root {
+      --bg: #e9eef6;             /* 연한 회색빛 파랑 배경 */
+      --card: #ffffff;
+      --ink: #14233f;            /* 진한 남색 본문 */
+      --ink-muted: #5a6b85;      /* 보조 텍스트 */
+      --line: #dbe2ec;
+      --accent: #1457d6;         /* 포인트 파랑 */
+      --accent-dark: #0e3e9e;
+      --tint: #eef3fc;           /* 옅은 파랑 타일 */
+      --urgent: #d32f2f;         /* 긴급 빨강 */
+      --rec: #1e9e57;            /* 추천 초록 */
+      --info: #1457d6;           /* 참고 파랑 */
+      --radius: 20px;
+      --fs: 20px;                /* 기본 폰트 (어르신 모드에서 확대) */
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      margin: 0; padding: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+      font-size: var(--fs);
+      line-height: 1.6;
+      min-height: 100vh;
+      word-break: keep-all;        /* 한국어 단어 단위 줄바꿈 (단어 중간 안 끊김) */
+      overflow-wrap: break-word;
+    }
+    /* 어르신 글자 크기 3단계: 기본 → 크게 → 더 크게 */
+    body.fs1 { --fs: 24px; }
+    body.fs2 { --fs: 29px; }
+
+    .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ════ 헤더 (차분한 흰 바) ════ */
+    header {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.92);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
+    .brand .ci { width: 38px; height: 38px; flex: 0 0 38px; display: block; }
+    .brand .name {
+      font-size: 25px; font-weight: 900; letter-spacing: -0.5px;
+      color: var(--ink);
+    }
+    .brand .tag { font-size: 13px; color: var(--ink-muted); font-weight: 700; }
+
+    .header-actions { display: flex; gap: 8px; }
+    .icon-btn {
+      width: 52px; height: 52px; border-radius: 14px;
+      border: 1px solid var(--line); background: #fff; color: var(--ink);
+      font-size: 24px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all .15s;
+    }
+    .icon-btn:active { transform: scale(.94); }
+    .icon-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .icon-btn.on2 { background: var(--accent-dark); border-color: var(--accent-dark); color: #fff; }
+    .icon-btn.speaking { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .icon-btn:focus { outline: none; }                              /* 터치 후 잔상 제거 */
+    .icon-btn:focus-visible { outline: 3px solid rgba(20,87,214,.45); }  /* 키보드 접근성 유지 */
+
+    main { flex: 1; padding: 16px 16px 96px; }
+
+    /* ── 화면 전환 ── */
+    .screen { display: none; }
+    .screen.active { display: block; animation: fade .22s ease; }
+    @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    /* 공용 흰 카드 */
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+      box-shadow: 0 2px 10px rgba(20, 35, 63, 0.06);
+    }
+
+    /* ════ 화면 1: 홈 ════ */
+    /* 유일한 파란 그라데이션 포인트 — 홈 상단 배너 */
+    .hero {
+      background: linear-gradient(150deg, #2f7bf0 0%, #1457d6 55%, #0e3e9e 100%);
+      color: #fff; padding: 28px 22px 30px; text-align: center;
+      border-radius: var(--radius); box-shadow: 0 8px 24px rgba(20, 87, 214, 0.28);
+    }
+    .hero .hero-icon {
+      width: 82px; height: 82px; margin: 0 auto 16px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 42px;
+      background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.55);
+    }
+    .hero p { margin: 0 0 22px; font-size: 1.15em; font-weight: 800; line-height: 1.5; }
+    .big-btn {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      width: 100%; padding: 19px; font-size: 1.12em; font-weight: 800;
+      border-radius: 16px; cursor: pointer; margin-top: 12px; border: 2px solid transparent;
+    }
+    .big-btn .ic { font-size: 1.4em; }
+    .big-btn.camera { background: #fff; color: var(--accent-dark); }
+    .big-btn.gallery { background: transparent; color: #fff; border-color: rgba(255, 255, 255, 0.7); }
+    .big-btn:active { transform: scale(.98); }
+
+    .features { margin-top: 20px; }
+    .features .label { font-size: 0.82em; color: var(--ink-muted); font-weight: 800; margin: 0 4px 12px; }
+    .feature-card {
+      display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+      padding: 16px; font-size: 1em; font-weight: 800; color: var(--ink);
+      cursor: pointer; margin-bottom: 12px;
+    }
+    .f-icon {
+      width: 56px; height: 56px; flex: 0 0 56px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; font-size: 28px;
+      background: var(--tint); color: var(--accent);
+    }
+    .feature-card .sub { display: block; font-size: 0.72em; color: var(--ink-muted); font-weight: 600; margin-top: 2px; }
+    .feature-card:active { background: #f5f8fd; }
+
+    .btn {
+      display: block; width: 100%; padding: 18px; font-size: 1.1em; font-weight: 800;
+      border: none; border-radius: 16px; background: var(--accent); color: #fff;
+      cursor: pointer; margin-top: 14px;
+    }
+    .btn:active { transform: scale(.98); background: var(--accent-dark); }
+    .btn.secondary { background: #fff; color: var(--accent-dark); border: 2px solid var(--accent); }
+    .hint { color: var(--ink-muted); font-size: 0.8em; margin: 8px 2px 0; }
+
+    /* ════ 화면 2: 분석 중 ════ */
+    .loading { padding: 36px 24px; }
+    .loading h2 { text-align: center; font-size: 1.2em; margin: 4px 0 28px; }
+    .steps { list-style: none; margin: 0; padding: 0; }
+    .step {
+      display: flex; align-items: center; gap: 16px; padding: 10px 0;
+      font-size: 1.05em; font-weight: 800; color: var(--ink-muted);
+      opacity: .5; transition: opacity .3s, color .3s;
+    }
+    .step .dot {
+      width: 46px; height: 46px; flex: 0 0 46px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 21px;
+      background: #fff; border: 2px solid var(--line); transition: all .3s;
+    }
+    .step.active { opacity: 1; color: var(--accent); }
+    .step.active .dot { border-color: var(--accent); color: var(--accent); animation: pulse 1s ease-in-out infinite; }
+    .step.done { opacity: 1; color: var(--rec); }
+    .step.done .dot { border-color: var(--rec); background: var(--rec); color: #fff; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(20,87,214,.35); } 50% { box-shadow: 0 0 0 10px rgba(20,87,214,0); } }
+
+    .tip-carousel { text-align: center; }
+    .tip-carousel .tip-label { font-size: 0.8em; color: var(--accent); font-weight: 800; margin: 0 0 8px; }
+    .tip-carousel .tip-text {
+      font-size: 1.05em; font-weight: 700; color: var(--ink); margin: 0;
+      line-height: 1.5; min-height: 3em;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .4s;
+    }
+    .tip-carousel .tip-text.fading { opacity: 0; }
+
+    /* ════ 화면 3: 결과 ════ */
+    .summary-card .badge {
+      display: inline-block; font-size: 0.78em; font-weight: 800;
+      padding: 4px 14px; border-radius: 999px; margin-bottom: 12px;
+      color: #fff; background: var(--accent);
+    }
+    .summary-card h2 { margin: 0 0 12px; font-size: 1.18em; color: var(--ink); }
+    .easy-text { font-size: 1.12em; line-height: 1.85; white-space: pre-wrap; color: var(--ink); }
+    .facts { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .fact { flex: 1; min-width: 120px; padding: 12px 14px; border-radius: 14px; background: #fff7e6; border: 1px solid #ffd666; }
+    .fact .k { font-size: 0.72em; color: #ad6800; font-weight: 800; }
+    .fact .v { font-size: 1.05em; font-weight: 800; color: var(--ink); }
+
+    .block { margin-top: 18px; }
+    .block .t { font-size: 0.82em; color: var(--ink-muted); font-weight: 800; margin-bottom: 8px; }
+    ul.points { margin: 0; padding-left: 22px; color: var(--ink); }
+    ul.points li { margin-bottom: 6px; }
+
+    /* 어려운 단어 풀이 칩 */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      background: var(--tint); border: 1px solid #cfe0ff; color: var(--ink);
+      border-radius: 999px; padding: 8px 14px; font-size: 0.86em; font-weight: 700;
+    }
+    .chip b { color: var(--accent-dark); }
+    .chip .eq { color: var(--ink-muted); margin: 0 4px; }
+
+    .section-title { font-size: 1.1em; font-weight: 900; margin: 22px 4px 12px; color: var(--ink); }
+
+    /* 혜택 카드 3단계 */
+    .policy {
+      background: #fff; border: 1px solid var(--line); border-left: 7px solid var(--accent);
+      border-radius: 16px; padding: 18px; margin-bottom: 14px;
+      box-shadow: 0 2px 10px rgba(20, 35, 63, 0.06);
+    }
+    .policy .tag {
+      display: inline-block; font-size: 0.76em; font-weight: 900;
+      padding: 4px 14px; border-radius: 999px; margin-bottom: 8px; color: #fff;
+    }
+    .policy .name { font-size: 1.1em; font-weight: 900; color: var(--ink); }
+    .policy .amount-big { font-size: 1.35em; font-weight: 900; margin: 8px 0 4px; }
+    .policy .row { margin: 5px 0; font-size: 0.98em; color: var(--ink); }
+    .policy .row .k { color: var(--ink-muted); font-weight: 800; }
+
+    /* 단계별 색 */
+    .policy.tier-urgent { border-left-color: var(--urgent); }
+    .policy.tier-urgent .tag { background: var(--urgent); }
+    .policy.tier-urgent .amount-big { color: var(--urgent); }
+    .policy.tier-rec { border-left-color: var(--rec); }
+    .policy.tier-rec .tag { background: var(--rec); }
+    .policy.tier-rec .amount-big { color: var(--rec); }
+    .policy.tier-info { border-left-color: var(--info); }
+    .policy.tier-info .tag { background: var(--info); }
+    .policy.tier-info .amount-big { color: var(--info); }
+
+    /* 전화(초록)·지도(파랑) 알약 버튼 */
+    .policy-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .policy-actions a {
+      flex: 1; text-align: center; padding: 14px 0; font-size: 0.95em; font-weight: 800;
+      border-radius: 999px; text-decoration: none; color: #fff;
+    }
+    .policy-actions a.call { background: var(--rec); }
+    .policy-actions a.map { background: var(--info); }
+    .policy-actions a.disabled { background: #e3e6ec; color: #9aa0aa; pointer-events: none; }
+
+    .share-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; padding: 18px; font-size: 1.1em; font-weight: 900;
+      border: none; border-radius: 16px; background: #FEE500; color: #3a1d1d; cursor: pointer; margin-top: 8px;
+    }
+    .share-btn:active { filter: brightness(.96); }
+
+    .error { background: #fdecea; border: 1px solid var(--urgent); color: var(--urgent); padding: 16px; border-radius: var(--radius); font-weight: 700; margin-bottom: 16px; }
+    .empty { color: var(--ink-muted); text-align: center; padding: 10px; }
+
+    /* ── 인라인 SVG 아이콘 (모던·심플, 두꺼운 라인, 단색) ── */
+    .ico { width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex: none; }
+    .icon-btn .ico { width: 32px; height: 32px; vertical-align: 0; }
+    .hero-icon .ico { width: 56px; height: 56px; }
+    .f-icon .ico { width: 40px; height: 40px; }
+    .big-btn .ico { width: 1.45em; height: 1.45em; vertical-align: -0.3em; }
+    .policy-actions .ico { width: 1.05em; height: 1.05em; vertical-align: -0.16em; margin-right: 5px; }
+    .share-btn .ico { width: 1.25em; height: 1.25em; vertical-align: -0.24em; }
+    .loading h2 .ico, .summary-card h2 .ico, .section-title .ico { color: var(--accent); margin-right: 7px; }
+    .error .ico { margin-right: 6px; vertical-align: -0.22em; }
+  </style>
+</head>
+<body>
+  <!-- ── 아이콘 스프라이트 (모던·심플, stroke 두껍게) ── -->
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <symbol id="i-volume" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>
+      </symbol>
+      <symbol id="i-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4.5"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>
+      </symbol>
+      <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z"/><path d="M14 2.5V8h5.5"/><path d="M8.5 13h7"/><path d="M8.5 17h7"/>
+      </symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.2"/>
+      </symbol>
+      <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="m21 15-5-5L5 21"/>
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/><path d="m21 21-4.2-4.2"/>
+      </symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/>
+      </symbol>
+      <symbol id="i-gift" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="8" width="18" height="4.5" rx="1"/><path d="M12 8v13"/><path d="M19.5 12.5V19a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-6.5"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8"/><path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"/>
+      </symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>
+      </symbol>
+      <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a6.5 6.5 0 0 0-4 11.6c.7.6 1 1.4 1 2.4h6c0-1 .3-1.8 1-2.4A6.5 6.5 0 0 0 12 2z"/>
+      </symbol>
+      <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 7.5v13"/><path d="M3 5.5a1 1 0 0 1 1-1h4.5A3.5 3.5 0 0 1 12 8a3.5 3.5 0 0 1 3.5-3.5H20a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1h-5a3 3 0 0 0-3 1.5 3 3 0 0 0-3-1.5H4a1 1 0 0 1-1-1z"/>
+      </symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>
+      </symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4.5"/><path d="M12 17.5h.01"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="app">
+
+    <!-- ════ 헤더 ════ -->
+    <header>
+      <div class="brand" id="brandHome" role="button" tabindex="0" title="처음으로">
+        <img class="ci" src="assets/gov-ci.png" alt="정부 상징" />
+        <div>
+          <div class="name">드리미</div>
+          <div class="tag">쉬운문서 도우미</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="btnTTS" title="이 화면 읽어주기" aria-label="이 화면 읽어주기"><svg class="ico"><use href="#i-volume"/></svg></button>
+        <button class="icon-btn" id="btnSenior" title="어르신 모드" aria-label="어르신 모드 (글씨 크게, 천천히 읽기)"><svg class="ico"><use href="#i-person"/></svg></button>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- ════ 화면 1: 홈 ════ -->
+      <section id="screen-home" class="screen active">
+        <div class="hero">
+          <div class="hero-icon"><svg class="ico"><use href="#i-doc"/></svg></div>
+          <p>고지서·안내문을 찍으면<br />쉽게 설명해 드려요</p>
+          <button class="big-btn camera" id="btnCamera"><svg class="ico"><use href="#i-camera"/></svg> 사진 찍기</button>
+          <button class="big-btn gallery" id="btnGallery"><svg class="ico"><use href="#i-image"/></svg> 사진 골라오기</button>
+        </div>
+
+        <div class="features">
+          <p class="label">이런 걸 도와드려요</p>
+          <div class="feature-card card" style="cursor:default">
+            <span class="f-icon"><svg class="ico"><use href="#i-search"/></svg></span>
+            <span>무슨 문서인지 알려드려요<span class="sub">고지서·안내문의 종류와 핵심 내용을 정리해요</span></span>
+          </div>
+          <div class="feature-card card" style="cursor:default">
+            <span class="f-icon"><svg class="ico"><use href="#i-chat"/></svg></span>
+            <span>쉬운 말로 풀어드려요<span class="sub">어려운 행정 용어를 알기 쉽게 바꿔드려요</span></span>
+          </div>
+          <div class="feature-card card" style="cursor:default">
+            <span class="f-icon"><svg class="ico"><use href="#i-gift"/></svg></span>
+            <span>받을 혜택을 찾아드려요<span class="sub">문서와 관련된 복지·지원 제도를 추천해요</span></span>
+          </div>
+          <div class="feature-card card" style="cursor:default">
+            <span class="f-icon"><svg class="ico"><use href="#i-phone"/></svg></span>
+            <span>도움이 필요하면<span class="sub">가족이나 주민센터에 문의하세요</span></span>
+          </div>
+        </div>
+
+        <input type="file" id="fileCamera" accept="image/*" capture="environment" hidden />
+        <input type="file" id="fileGallery" accept="image/*" hidden />
+      </section>
+
+      <!-- ════ 화면 2: 분석 중 ════ -->
+      <section id="screen-loading" class="screen">
+        <div class="loading card">
+          <h2><svg class="ico"><use href="#i-search"/></svg>문서를 살펴보고 있어요</h2>
+          <ul class="steps">
+            <li class="step" data-step="0"><span class="dot">1</span><span>글자를 읽는 중</span></li>
+            <li class="step" data-step="1"><span class="dot">2</span><span>내용을 분석하는 중</span></li>
+            <li class="step" data-step="2"><span class="dot">3</span><span>쉬운 말로 바꾸는 중</span></li>
+            <li class="step" data-step="3"><span class="dot">4</span><span>받을 수 있는 혜택 찾는 중</span></li>
+          </ul>
+        </div>
+        <div class="tip-carousel card" id="tipCarousel" aria-live="polite">
+          <p class="tip-label">💡 알아두면 좋아요</p>
+          <p class="tip-text" id="tipText"></p>
+        </div>
+      </section>
+
+      <!-- ════ 화면 3: 결과 ════ -->
+      <section id="screen-result" class="screen">
+        <div id="resultError"></div>
+
+        <div class="card summary-card">
+          <span class="badge" id="docBadge" hidden></span>
+          <h2><svg class="ico"><use href="#i-bulb"/></svg>쉬운 설명</h2>
+          <div class="easy-text" id="easyText"></div>
+          <div class="facts" id="factsBox"></div>
+          <div id="glossaryBox"></div>
+          <div id="extraBox"></div>
+        </div>
+
+        <div class="section-title"><svg class="ico"><use href="#i-gift"/></svg>받을 수 있는 혜택</div>
+        <div id="policyBox"></div>
+
+        <button class="share-btn" id="btnShare"><svg class="ico"><use href="#i-chat"/></svg>카카오톡으로 공유</button>
+        <button class="btn secondary" id="btnBack" style="margin-top:14px;">← 다른 문서 확인하기</button>
+      </section>
+
+    </main>
+
+    <!-- ════════ DEV ONLY: 화면 전환 바 (배포 전 삭제) ════════ -->
+    <div id="devbar" style="position:fixed;left:0;right:0;bottom:0;z-index:9999;
+        max-width:480px;margin:0 auto;display:flex;gap:6px;padding:8px;
+        background:rgba(20,35,63,.9);font-size:14px;">
+      <button onclick="showScreen('screen-home')" style="flex:1;padding:8px;border:0;border-radius:8px;background:#34507f;color:#fff;font-weight:700;">🏠 홈</button>
+      <button onclick="showScreen('screen-loading');startSteps();" style="flex:1;padding:8px;border:0;border-radius:8px;background:#34507f;color:#fff;font-weight:700;">⏳ 분석중</button>
+      <button onclick="devShowResult()" style="flex:1;padding:8px;border:0;border-radius:8px;background:#34507f;color:#fff;font-weight:700;">✅ 결과</button>
+    </div>
+    <!-- ════════ /DEV ONLY ════════ -->
+  </div>
+
+  <script>
+    // 로컬(파일/localhost)에서는 백엔드 8000 직접 호출,
+    // 터널 등 외부 출처로 서빙되면 같은 출처(프록시)로 호출
+    const API_BASE = (location.protocol === "file:" ||
+                      location.hostname === "localhost" ||
+                      location.hostname === "127.0.0.1")
+      ? "http://localhost:8000" : "";
+    let lastResult = null;
+
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      window.scrollTo(0, 0);
+      stopTTS();
+    }
+
+    // ════ 어르신 글자 크기 (3단계) + TTS 속도 연동 ════
+    let fontLevel = 0;                  // 0 기본 / 1 크게 / 2 더 크게
+    const ttsRates = [1.0, 0.85, 0.72]; // 단계가 커질수록 천천히 읽음
+    const btnSenior = document.getElementById("btnSenior");
+    function applyFontLevel() {
+      document.body.classList.toggle("fs1", fontLevel === 1);
+      document.body.classList.toggle("fs2", fontLevel === 2);
+      btnSenior.classList.toggle("on", fontLevel >= 1);
+      btnSenior.classList.toggle("on2", fontLevel === 2);
+      btnSenior.setAttribute("aria-label",
+        ["글자 크기 보통", "글자 크게", "글자 더 크게"][fontLevel] + " (누르면 단계 변경, 글자가 클수록 천천히 읽어요)");
+    }
+    btnSenior.addEventListener("click", function () {
+      fontLevel = (fontLevel + 1) % 3;
+      applyFontLevel();
+      this.blur();
+    });
+
+    // ════ TTS ════
+    const btnTTS = document.getElementById("btnTTS");
+    function stopTTS() {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      btnTTS.classList.remove("speaking");
+    }
+    function readableTextFor(screenId) {
+      if (screenId === "screen-home")
+        return "드리미, 쉬운문서 도우미입니다. 고지서나 안내문을 찍으면 쉽게 설명해 드려요. 사진 찍기 또는 사진 골라오기 버튼을 누르세요.";
+      if (screenId === "screen-loading")
+        return "문서를 살펴보고 있어요. 잠시만 기다려 주세요.";
+      if (screenId === "screen-result") {
+        const parts = [];
+        const badge = document.getElementById("docBadge");
+        if (!badge.hidden && badge.textContent) parts.push(badge.textContent);
+        parts.push(document.getElementById("easyText").innerText);
+        const facts = document.getElementById("factsBox").innerText.trim();
+        if (facts) parts.push(facts.replace(/\n/g, " "));
+        const gloss = document.getElementById("glossaryBox").innerText.trim();
+        if (gloss) parts.push(gloss.replace(/\n/g, ". "));
+        const extra = document.getElementById("extraBox").innerText.trim();
+        if (extra) parts.push(extra);
+        const policies = document.getElementById("policyBox").innerText.trim();
+        if (policies) parts.push("받을 수 있는 혜택. " + policies.replace(/\n/g, ", "));
+        return parts.join(". ");
+      }
+      return "";
+    }
+    btnTTS.addEventListener("click", () => {
+      if (!window.speechSynthesis) { alert("이 브라우저는 읽어주기를 지원하지 않아요."); return; }
+      if (window.speechSynthesis.speaking) { stopTTS(); return; }
+      const screenId = document.querySelector(".screen.active").id;
+      const text = readableTextFor(screenId);
+      if (!text.trim()) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "ko-KR";
+      u.rate = ttsRates[fontLevel];   // 글자 크기 단계에 맞춰 읽기 속도 조절
+      u.onend = () => btnTTS.classList.remove("speaking");
+      u.onerror = () => btnTTS.classList.remove("speaking");
+      btnTTS.classList.add("speaking");
+      window.speechSynthesis.speak(u);
+      btnTTS.blur();                  // 터치 후 hover/포커스 잔상 제거
+    });
+
+    // ── 홈 동작 ──
+    const fileCamera = document.getElementById("fileCamera");
+    const fileGallery = document.getElementById("fileGallery");
+    document.getElementById("btnCamera").addEventListener("click", () => fileCamera.click());
+    document.getElementById("btnGallery").addEventListener("click", () => fileGallery.click());
+    fileCamera.addEventListener("change", () => { const f = fileCamera.files[0]; if (f) run(() => callProcess(f)); });
+    fileGallery.addEventListener("change", () => { const f = fileGallery.files[0]; if (f) run(() => callProcess(f)); });
+
+    // ── API ──
+    async function callProcess(file) {
+      const form = new FormData(); form.append("file", file);
+      return handleResponse(await fetch(`${API_BASE}/api/process`, { method: "POST", body: form }));
+    }
+    function formatDetail(d) {
+      if (typeof d === "string") return d;
+      if (Array.isArray(d)) return d.map((e) => (e && e.msg) ? e.msg : String(e)).join(", ");
+      if (d && typeof d === "object") return d.msg || JSON.stringify(d);
+      return String(d);
+    }
+    async function handleResponse(res) {
+      if (!res.ok) {
+        let detail = `오류가 발생했어요 (${res.status})`;
+        try { const err = await res.json(); if (err && err.detail != null) detail = formatDetail(err.detail); } catch (_) {}
+        throw new Error(detail);
+      }
+      return res.json();
+    }
+
+    // ── 4단계 진행 ──
+    const TIPS = [
+      "📷 글씨가 잘 보이게 밝은 곳에서 반듯하게 찍어주세요.",
+      "🔊 화면 위 스피커 버튼을 누르면 내용을 읽어드려요.",
+      "👵 ‘어르신 모드’를 켜면 글씨가 더 커져요.",
+      "💰 만 65세 이상이면 매달 ‘기초연금’을 받을 수 있어요.",
+      "🏥 소득·재산이 적으면 ‘건강보험료’를 줄여드려요.",
+      "🔥 난방·전기요금이 부담되면 ‘에너지바우처’를 신청해 보세요.",
+      "📞 도움이 필요하면 보건복지상담 129로 전화하세요.",
+    ];
+    let tipTimer = null;
+    function startTips() {
+      const el = document.getElementById("tipText");
+      if (!el) return;
+      let i = Math.floor(Math.random() * TIPS.length);
+      el.textContent = TIPS[i];
+      clearInterval(tipTimer);
+      tipTimer = setInterval(() => {
+        el.classList.add("fading");
+        setTimeout(() => {
+          i = (i + 1) % TIPS.length;
+          el.textContent = TIPS[i];
+          el.classList.remove("fading");
+        }, 400);
+      }, 5000);
+    }
+    function stopTips() { clearInterval(tipTimer); tipTimer = null; }
+
+    let stepTimer = null;
+    function startSteps() {
+      const steps = [...document.querySelectorAll(".step")];
+      steps.forEach((s) => s.classList.remove("active", "done"));
+      let i = 0; steps[0].classList.add("active");
+      stepTimer = setInterval(() => {
+        if (i >= steps.length - 1) return;
+        steps[i].classList.remove("active"); steps[i].classList.add("done");
+        i++; steps[i].classList.add("active");
+      }, 850);
+    }
+    function finishSteps() {
+      clearInterval(stepTimer);
+      document.querySelectorAll(".step").forEach((s) => { s.classList.remove("active"); s.classList.add("done"); });
+    }
+    async function run(apiCall) {
+      fileCamera.value = ""; fileGallery.value = "";
+      showScreen("screen-loading"); startSteps(); startTips();
+      const started = Date.now();
+      try {
+        const data = await apiCall();
+        await settle(started); finishSteps(); stopTips();
+        renderResult(data); showScreen("screen-result");
+      } catch (e) {
+        await settle(started); clearInterval(stepTimer); stopTips();
+        renderError(e.message); showScreen("screen-result");
+      }
+    }
+    function settle(started) {
+      const elapsed = Date.now() - started, min = 1400;
+      return elapsed >= min ? Promise.resolve() : new Promise((r) => setTimeout(r, min - elapsed));
+    }
+
+    // ── 결과 렌더 ──
+    function renderError(msg) {
+      lastResult = null;
+      document.getElementById("resultError").innerHTML = `<div class="error"><svg class="ico"><use href="#i-alert"/></svg>${escapeHtml(msg)}</div>`;
+      document.getElementById("docBadge").hidden = true;
+      document.getElementById("easyText").textContent = "결과를 불러오지 못했어요.";
+      document.getElementById("factsBox").innerHTML = "";
+      document.getElementById("glossaryBox").innerHTML = "";
+      document.getElementById("extraBox").innerHTML = "";
+      document.getElementById("policyBox").innerHTML = `<div class="empty">관련 혜택을 표시할 수 없어요.</div>`;
+    }
+
+    function renderResult(data) {
+      lastResult = data;
+      document.getElementById("resultError").innerHTML = "";
+      const a = data.analysis || {};
+
+      const badge = document.getElementById("docBadge");
+      if (a.doc_type) { badge.textContent = a.doc_type; badge.hidden = false; } else badge.hidden = true;
+
+      document.getElementById("easyText").textContent =
+        data.easy_translation || a.summary || "쉬운 설명을 만들지 못했어요.";
+
+      const facts = [];
+      if (a.amount) facts.push(fact("금액", a.amount));
+      if (a.deadline) facts.push(fact("기한", a.deadline));
+      document.getElementById("factsBox").innerHTML = facts.join("");
+
+      // 어려운 단어 풀이 칩 (analysis.glossary 또는 data.glossary 지원)
+      document.getElementById("glossaryBox").innerHTML = renderGlossary(a.glossary || data.glossary);
+
+      let extra = "";
+      if (a.key_points && a.key_points.length) extra += block("핵심 내용", a.key_points);
+      if (a.required_actions && a.required_actions.length) extra += block("해야 할 일", a.required_actions);
+      document.getElementById("extraBox").innerHTML = extra;
+
+      const policies = data.matched_policies || [];
+      document.getElementById("policyBox").innerHTML = policies.length
+        ? policies.map(renderPolicy).join("")
+        : `<div class="empty">관련된 혜택을 찾지 못했어요.</div>`;
+    }
+
+    // glossary 정규화: [{term,meaning}] / [{word,easy}] / ["미납=안 냄"] / [["미납","안 냄"]] 모두 허용
+    function renderGlossary(g) {
+      if (!g || !g.length) return "";
+      const items = g.map((it) => {
+        if (Array.isArray(it)) return { term: it[0], meaning: it[1] };
+        if (typeof it === "string") { const [t, m] = it.split(/=|:/); return { term: (t||"").trim(), meaning: (m||"").trim() }; }
+        return { term: it.term || it.word || "", meaning: it.meaning || it.easy || it.def || "" };
+      }).filter((x) => x.term);
+      if (!items.length) return "";
+      const chips = items.map((x) =>
+        `<span class="chip"><b>${escapeHtml(x.term)}</b><span class="eq">=</span>${escapeHtml(x.meaning)}</span>`
+      ).join("");
+      return `<div class="block"><div class="t"><svg class="ico"><use href="#i-book"/></svg> 어려운 말 풀이</div><div class="chips">${chips}</div></div>`;
+    }
+
+    // priority(high/medium/low) → 긴급/추천/참고
+    function tierOf(priority) {
+      if (priority === "high") return { cls: "tier-urgent", label: "긴급" };
+      if (priority === "low") return { cls: "tier-info", label: "참고" };
+      return { cls: "tier-rec", label: "추천" };
+    }
+
+    function renderPolicy(p) {
+      const tier = tierOf(p.priority);
+      const rows = [];
+      if (p.eligibility) rows.push(prow("대상", p.eligibility));
+      if (p.how_to_apply) rows.push(prow("신청", p.how_to_apply));
+      if (p.source) rows.push(prow("출처", p.source));
+      const amountBig = p.amount ? `<div class="amount-big">${escapeHtml(p.amount)}</div>` : "";
+      const callBtn = p.phone ? `<a class="call" href="tel:${escapeHtml(p.phone)}"><svg class="ico"><use href="#i-phone"/></svg>전화하기</a>` : `<a class="call disabled"><svg class="ico"><use href="#i-phone"/></svg>전화 정보 없음</a>`;
+      const mapBtn = p.visit ? `<a class="map" href="https://map.naver.com/v5/search/${encodeURIComponent(p.visit)}" target="_blank" rel="noopener"><svg class="ico"><use href="#i-pin"/></svg>위치 보기</a>` : `<a class="map disabled"><svg class="ico"><use href="#i-pin"/></svg>위치 정보 없음</a>`;
+      return `<div class="policy ${tier.cls}">
+        <span class="tag">${tier.label}</span>
+        <div class="name">${escapeHtml(p.name || "혜택")}</div>
+        ${amountBig}
+        ${rows.join("")}
+        <div class="policy-actions">${callBtn}${mapBtn}</div>
+      </div>`;
+    }
+
+    function fact(k, v) { return `<div class="fact"><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div></div>`; }
+    function block(title, items) {
+      return `<div class="block"><div class="t">${escapeHtml(title)}</div>` +
+        `<ul class="points">${items.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>`;
+    }
+    function prow(k, v) { return `<div class="row"><span class="k">${escapeHtml(k)}:</span> ${escapeHtml(v)}</div>`; }
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    // ── 카카오톡 공유 ──
+    document.getElementById("btnShare").addEventListener("click", async () => {
+      if (!lastResult) return;
+      const a = lastResult.analysis || {};
+      const top = (lastResult.matched_policies || [])[0];
+      let text = `[드리미]\n`;
+      if (a.doc_type) text += `${a.doc_type}\n`;
+      text += `\n${lastResult.easy_translation || a.summary || ""}\n`;
+      if (a.amount) text += `\n금액: ${a.amount}`;
+      if (a.deadline) text += `\n기한: ${a.deadline}`;
+      if (top) text += `\n\n추천 혜택: ${top.name}`;
+      try {
+        if (navigator.share) await navigator.share({ title: "드리미", text });
+        else { await navigator.clipboard.writeText(text); alert("내용을 복사했어요. 카카오톡에 붙여넣어 보내세요."); }
+      } catch (_) {}
+    });
+
+    // ════ DEV ONLY: 샘플 결과 (배포 전 삭제) ════
+    function devShowResult() {
+      renderResult({
+        ocr_text: "(개발용 샘플)",
+        analysis: {
+          doc_type: "건강보험료 납부 안내", sender: "국민건강보험공단",
+          summary: "이번 달 건강보험료가 나왔습니다.", amount: "58,420원", deadline: "2026년 6월 25일",
+          glossary: [
+            { term: "미납", meaning: "안 냄" },
+            { term: "연체금", meaning: "늦게 내서 더 붙는 돈" },
+            { term: "지역가입자", meaning: "직장이 없어 따로 내는 사람" },
+            { term: "자동이체", meaning: "통장에서 자동으로 빠져나감" },
+          ],
+          key_points: ["6월분 지역가입자 건강보험료입니다.", "기한 내 납부하지 않으면 연체금이 붙습니다."],
+          required_actions: ["6월 25일까지 은행이나 자동이체로 납부하세요."],
+        },
+        easy_translation: "이번 달 건강보험료 58,420원이 나왔어요.\n6월 25일까지 내시면 됩니다.\n늦으면 돈을 더 내야 하니 잊지 마세요.",
+        matched_policies: [
+          { id: "p1", name: "건강보험료 경감 (저소득층)", category: "의료", priority: "high",
+            eligibility: "소득 하위 계층", amount: "보험료 최대 50% 경감", how_to_apply: "주민센터 또는 건강보험공단 방문 신청", source: "국민건강보험공단", phone: "1577-1000", visit: "" },
+          { id: "p2", name: "기초연금", category: "복지", priority: "medium",
+            eligibility: "만 65세 이상, 소득 하위 70%", amount: "월 최대 334,810원", how_to_apply: "주민센터·복지로 온라인 신청", source: "보건복지부", phone: "", visit: "주민센터" },
+          { id: "p3", name: "에너지 바우처", category: "생활", priority: "low",
+            eligibility: "기초생활수급자 등", amount: "연 최대 약 30만원", how_to_apply: "주민센터 신청", source: "산업통상자원부", phone: "", visit: "" },
+        ],
+      });
+      showScreen("screen-result");
+    }
+    // ════ /DEV ONLY ════
+
+    // 처음 화면으로 (실수 방지: 한 번 확인)
+    function goHome() {
+      if (document.querySelector(".screen.active").id === "screen-home") return;
+      if (!confirm("처음 화면으로 돌아갈까요?")) return;
+      showScreen("screen-home");
+    }
+    document.getElementById("btnBack").addEventListener("click", goHome);
+    const brandHome = document.getElementById("brandHome");
+    brandHome.addEventListener("click", goHome);
+    brandHome.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goHome(); }
+    });
+  </script>
+</body>
+</html>
