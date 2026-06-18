@@ -1,0 +1,10 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+*.json.key
+vision-service-account.json
+.DS_Store
+.idea/
+.vscode/

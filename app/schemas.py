@@ -1,0 +1,44 @@
+from pydantic import BaseModel, Field
+
+
+class DocumentAnalysis(BaseModel):
+    """문서 분석 결과."""
+
+    doc_type: str = Field("", description="문서 종류 (예: 건강보험 고지서)")
+    sender: str = Field("", description="보낸 기관")
+    summary: str = Field("", description="문서 요약")
+    key_points: list[str] = Field(default_factory=list, description="핵심 내용")
+    amount: str = Field("", description="금액 (있을 경우)")
+    deadline: str = Field("", description="기한/날짜 (있을 경우)")
+    required_actions: list[str] = Field(
+        default_factory=list, description="사용자가 해야 할 일"
+    )
+
+
+class MatchedPolicy(BaseModel):
+    """RAG로 매칭된 혜택 정책."""
+
+    id: str = ""
+    title: str = ""
+    summary: str = ""
+    eligibility: str = ""
+    benefit: str = ""
+    apply: str = ""
+    category: str = ""
+    source: str = ""
+    score: float = 0.0
+
+
+class ProcessResponse(BaseModel):
+    """/api/process 응답 (프론트엔드 계약)."""
+
+    ocr_text: str
+    analysis: DocumentAnalysis
+    easy_translation: str
+    matched_policies: list[MatchedPolicy]
+
+
+class AnalyzeTextRequest(BaseModel):
+    """OCR 없이 텍스트만으로 테스트할 때 사용."""
+
+    text: str
