@@ -80,7 +80,7 @@ Desktop\hackathon\
 4. [x] 서버 구동 확인 (http://localhost:8000/docs → 200)
 5. [x] `/api/analyze-text` 검증 — 건강보험 고지서 텍스트 → 분석/번역/RAG 모두 정상, policy-004 1위 매칭.
 6. [x] `/api/process` 검증 — 한글 재산세 고지서 테스트 이미지(`tests/sample_notice.png`, `tests/`의 생성 스크립트는 /tmp/make_img.py 참고) 업로드 → **Gemini OCR 정확 추출**(기관·금액·기한·전화·납부번호) → 분석/번역/RAG 정상.
-7. [~] corpus 스키마 팀원 계약으로 정렬 완료 + 샘플 4건. **남은 것: 팀원의 실제 `corpus.json`(같은 12필드 스키마)으로 파일만 교체** → 서버 재시작 시 자동 재임베딩. 교체 후 검증쿼리 3~5개로 적중 확인, 안 맞으면 `keywords` 보강.
+7. [x] **팀원 corpus 25건 적용 완료.** 팀원이 origin/main에 올린 corpus(title/benefit/signals/region/age_min 등 다른 스키마 + hybrid rag.py)를 데이터만 가져와 **우리 12필드 스키마로 변환**(title→name, benefit→amount, apply→how_to_apply, keywords+signals→공백string, priority int 1~2/3/4~5→high/medium/low). 백엔드 코드(ocr=Gemini, rag, schemas)는 **우리 것 유지**(팀원 hybrid rag는 미채택, 사용자 결정). phone/visit는 corpus에 데이터 없어 빈값(프론트 전화/지도 버튼 비활성). related_doc_types도 빈배열이라 doc_type 가점은 현재 무효, 임베딩 매칭만 작동. 25건 매칭 검증 완료(건강보험료/전기요금/독거노인 돌봄 모두 정확). **origin/main을 우리 버전으로 덮어쓰기 푸시함**(팀원 hybrid rag/SOURCE_LOG는 원격 히스토리에만 잔존).
 8. [ ] 프론트엔드 CORS 주소를 `.env`의 `CORS_ORIGINS`에 추가
 9. [ ] (선택) 번역 출력이 마크다운(**/*) 섞여 나옴 — 노인 대상이면 프롬프트에서 순수 텍스트로 다듬을지 검토
 10. [ ] (선택) git 커밋/푸시 — 이번 변경(OCR=Gemini, corpus 스키마 정렬) 아직 커밋 안 됨
