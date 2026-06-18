@@ -77,7 +77,7 @@ async def main() -> int:
             all_ok = False
             continue
         for m in matches:
-            print(f"  [{m.score:.4f}] {m.id}  {m.title}  ({m.category})")
+            print(f"  [{m.score:.4f}] {m.id}  {m.name}  ({m.category})")
         print()
 
     if all_ok:

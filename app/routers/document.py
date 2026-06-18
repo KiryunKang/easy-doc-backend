@@ -35,7 +35,9 @@ async def process_document(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="빈 파일입니다.")
 
     try:
-        ocr_text = await ocr.extract_text(image_bytes)
+        ocr_text = await ocr.extract_text(
+            image_bytes, file.content_type or "image/jpeg"
+        )
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"OCR 처리 실패: {e}")
 

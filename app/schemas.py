@@ -16,16 +16,18 @@ class DocumentAnalysis(BaseModel):
 
 
 class MatchedPolicy(BaseModel):
-    """RAG로 매칭된 혜택 정책."""
+    """RAG로 매칭된 혜택 정책 (corpus.json 스키마 계약 B→A 기준)."""
 
     id: str = ""
-    title: str = ""
-    summary: str = ""
-    eligibility: str = ""
-    benefit: str = ""
-    apply: str = ""
+    name: str = ""
     category: str = ""
+    eligibility: str = ""
+    amount: str = ""
+    how_to_apply: str = ""
+    phone: str = ""
+    visit: str = ""
     source: str = ""
+    priority: str = "medium"
     score: float = 0.0
 
 

@@ -5,15 +5,15 @@
 ## 파이프라인
 
 ```
-사진 업로드 → Google Vision OCR ─┬─ Gemini 문서 분석   (병렬)
-                                 └─ Gemini 쉬운말 번역 (병렬)
-                                 → 임베딩 RAG로 혜택 정책 매칭 → 결과 반환
+사진 업로드 → Gemini OCR ─┬─ Gemini 문서 분석   (병렬)
+                          └─ Gemini 쉬운말 번역 (병렬)
+                          → 임베딩 RAG로 혜택 정책 매칭 → 결과 반환
 ```
 
 ## 기술 스택
 
-- **OCR**: Google Cloud Vision (`document_text_detection`, 한국어 힌트)
-- **LLM**: Gemini 2.5 Flash (`google-genai`) — 문서 분석 · 쉬운말 번역
+- **OCR**: Gemini 2.5 Flash (멀티모달, 이미지 → 텍스트)
+- **LLM**: Gemini 2.5 Flash (`google-genai`) — OCR · 문서 분석 · 쉬운말 번역
 - **RAG**: 로컬 한국어 임베딩 `jhgan/ko-sroberta-multitask` (sentence-transformers) + ChromaDB(인메모리) 코사인 유사도
 - **서버**: FastAPI + uvicorn
 
@@ -27,7 +27,7 @@ hackathon/
 │   ├── schemas.py           # 요청/응답 Pydantic 모델 (프론트 계약)
 │   ├── routers/document.py  # /api/process, /api/analyze-text
 │   └── services/
-│       ├── ocr.py           # Google Vision OCR
+│       ├── ocr.py           # Gemini 멀티모달 OCR
 │       ├── analysis.py      # Gemini 문서 분석
 │       ├── translation.py   # Gemini 쉬운말 번역
 │       ├── rag.py           # 혜택 정책 매칭
@@ -46,8 +46,7 @@ hackathon/
    pip install -r requirements.txt
    ```
 2. `.env.example` → `.env` 복사 후 키 채우기
-   - `GEMINI_API_KEY`: Gemini API 키
-   - `GOOGLE_APPLICATION_CREDENTIALS`: Vision 서비스 계정 JSON 경로
+   - `GEMINI_API_KEY`: Gemini API 키 (OCR·분석·번역 모두 사용)
 3. 서버 실행
    ```powershell
    uvicorn app.main:app --reload --port 8000
@@ -64,7 +63,7 @@ hackathon/
 
 ### `POST /api/analyze-text`  (application/json) — OCR 없이 테스트
 - 본문: `{ "text": "문서 텍스트" }`
-- 응답: `ProcessResponse` (Vision 키 없이 분석/번역/RAG 개발 가능)
+- 응답: `ProcessResponse` (이미지 없이 분석/번역/RAG 개발·테스트 가능)
 
 ### `ProcessResponse`
 ```jsonc
@@ -82,29 +81,36 @@ hackathon/
   "easy_translation": "쉬운 말로 바꾼 안내문 ...",
   "matched_policies": [
     {
-      "id": "policy-004", "title": "건강보험료 경감",
-      "summary": "...", "eligibility": "...", "benefit": "...",
-      "apply": "...", "category": "...", "source": "...",
-      "score": 0.83
+      "id": "health_insurance_reduction", "name": "건강보험료 경감(지역가입자)",
+      "category": "의료/공과금", "eligibility": "...",
+      "amount": "...", "how_to_apply": "...",
+      "phone": "1577-1000", "visit": "국민건강보험공단 지사",
+      "source": "국민건강보험공단", "priority": "medium",
+      "score": 0.53
     }
   ]
 }
 ```
+> `matched_policies` 는 **유사도 0.35 미만 컷 → 유사도 내림차순 → (동점 시) `priority`(high>medium>low)** 순으로 정렬됩니다. 입력 문서종류가 정책의 `related_doc_types` 와 겹치면 가점·강제포함됩니다.
 
-## corpus.json 스키마 (팀원 작성 가이드)
+## corpus.json 스키마 (팀원 B→A 계약)
 
-`data/corpus.json` 은 혜택 정책 객체의 **배열**입니다. 각 항목:
+`data/corpus.json` 은 혜택 정책 객체의 **배열**입니다. 각 항목(12필드):
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| `id` | string | 고유 ID |
-| `title` | string | 정책명 |
-| `summary` | string | 한두 문장 설명 |
-| `eligibility` | string | 지원 대상/자격 |
-| `benefit` | string | 지원 내용/금액 |
-| `category` | string | 분류 |
-| `keywords` | string[] | 매칭용 키워드 (키워드 폴백에서 사용) |
-| `apply` | string | 신청 방법 |
-| `source` | string | 출처 기관 |
+| 필드 | 타입 | 임베딩 | 설명 |
+|------|------|:---:|------|
+| `id` | string | — | 고유 ID (중복 금지) |
+| `name` | string | ✅ | 정책명 |
+| `category` | string | ✅ | 분야(연금/의료/공과금/긴급지원…) |
+| `eligibility` | string | ✅ | 지원 대상(나이·소득 등) |
+| `keywords` | string | ✅ | 검색어 나열(공백 구분) |
+| `related_doc_types` | string[] | ✅ | 연관 문서종류 (가점·강제포함 매칭에 사용) |
+| `amount` | string | — | 금액(불확실 시 `"확인필요"`) |
+| `how_to_apply` | string | — | 신청 방법 |
+| `phone` | string | — | 전화 (`tel:` 연결) |
+| `visit` | string | — | 찾아가기 (지도 연결) |
+| `source` | string | — | 출처(소관기관) |
+| `priority` | string | — | `"high"`/`"medium"`/`"low"` (긴급 혜택 상단 정렬) |
 
-`title`·`summary`·`eligibility`·`category`·`keywords` 가 임베딩 대상 텍스트로 합쳐집니다. 파일을 교체하면 서버 재시작 시 자동으로 다시 임베딩됩니다.
+임베딩 텍스트 = `name | category | 대상:eligibility | keywords | 관련문서:related_doc_types`.
+파일을 교체하면 서버 재시작 시 자동으로 다시 임베딩됩니다.

@@ -1,40 +1,28 @@
-import asyncio
-import os
-
-from google.cloud import vision
+from google.genai import types
 
 from app.config import get_settings
+from app.services.gemini_client import get_client
 
-_client: vision.ImageAnnotatorClient | None = None
+OCR_PROMPT = """이 이미지는 한국의 공공문서(고지서·안내문·공문 등)를 촬영한 사진입니다.
+이미지에 보이는 모든 글자를 빠짐없이 그대로 추출해 주세요.
 
-
-def _get_client() -> vision.ImageAnnotatorClient:
-    global _client
-    if _client is None:
-        settings = get_settings()
-        # 서비스 계정 키 경로를 환경 변수로 노출 (google-cloud-vision 가 자동 인식)
-        if settings.google_application_credentials and not os.environ.get(
-            "GOOGLE_APPLICATION_CREDENTIALS"
-        ):
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
-                settings.google_application_credentials
-            )
-        _client = vision.ImageAnnotatorClient()
-    return _client
+규칙:
+- 표나 항목은 읽는 순서대로 줄바꿈하여 정리하세요.
+- 금액·날짜·기관명·전화번호·숫자를 정확히 옮기세요.
+- 설명이나 해석을 덧붙이지 말고, 문서에 실제로 적힌 텍스트만 출력하세요.
+- 글자를 전혀 찾을 수 없으면 빈 문자열만 출력하세요."""
 
 
-def _sync_extract(image_bytes: bytes) -> str:
-    client = _get_client()
-    image = vision.Image(content=image_bytes)
-    # 밀집 문서(고지서/공문)에는 document_text_detection 이 더 정확
-    response = client.document_text_detection(
-        image=image, image_context={"language_hints": ["ko"]}
+async def extract_text(image_bytes: bytes, mime_type: str = "image/jpeg") -> str:
+    """이미지 바이트에서 Gemini 2.5 Flash 로 텍스트(OCR) 추출."""
+    client = get_client()
+    settings = get_settings()
+    resp = await client.aio.models.generate_content(
+        model=settings.gemini_model,
+        contents=[
+            types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+            OCR_PROMPT,
+        ],
+        config={"temperature": 0.0},
     )
-    if response.error.message:
-        raise RuntimeError(response.error.message)
-    return response.full_text_annotation.text or ""
-
-
-async def extract_text(image_bytes: bytes) -> str:
-    """이미지 바이트에서 텍스트 추출 (동기 SDK를 스레드로 오프로드)."""
-    return await asyncio.to_thread(_sync_extract, image_bytes)
+    return (resp.text or "").strip()

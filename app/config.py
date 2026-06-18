@@ -17,12 +17,10 @@ class Settings(BaseSettings):
     # RAG 임베딩 (로컬 한국어 모델, sentence-transformers)
     embedding_model: str = "jhgan/ko-sroberta-multitask"
 
-    # Google Cloud Vision (OCR) - 서비스 계정 키 경로
-    google_application_credentials: str = ""
-
     # RAG
     corpus_path: str = "data/corpus.json"
     rag_top_k: int = 3
+    rag_score_threshold: float = 0.35  # 코사인 유사도 컷 (미만 제외)
 
     # CORS
     cors_origins: list[str] = ["*"]

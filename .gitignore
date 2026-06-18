@@ -8,3 +8,6 @@ vision-service-account.json
 .DS_Store
 .idea/
 .vscode/
+
+# 테스트 임시 산출물
+tests/_*
