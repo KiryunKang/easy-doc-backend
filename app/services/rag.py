@@ -72,6 +72,11 @@ class RAGEngine:
             f"{settings.embedding_model} 임베딩 → Chroma 적재 완료."
         )
 
+    @staticmethod
+    def _norm(s: str) -> str:
+        """부분문자열 매칭용 정규화: 소문자화 + 공백 제거."""
+        return "".join(str(s).lower().split())
+
     async def match(self, analysis: DocumentAnalysis) -> list[MatchedPolicy]:
         if not self.ready or not self.policies:
             return []
@@ -79,6 +84,7 @@ class RAGEngine:
         query = " ".join(
             [
                 analysis.doc_type,
+                analysis.sender,
                 analysis.summary,
                 " ".join(analysis.key_points),
                 " ".join(analysis.required_actions),
@@ -87,26 +93,64 @@ class RAGEngine:
         if not query:
             return []
 
-        k = get_settings().rag_top_k
-        return await asyncio.to_thread(self._query, query, k)
+        settings = get_settings()
+        return await asyncio.to_thread(
+            self._query, query, settings.rag_top_k, settings.rag_min_score
+        )
 
-    def _query(self, query: str, k: int) -> list[MatchedPolicy]:
+    def _query(self, query: str, k: int, min_score: float) -> list[MatchedPolicy]:
+        """하이브리드 매칭: 벡터(임계값) + 신호 강제포함 + 키워드 폴백 + 부적합 제외,
+        정렬은 우선순위(priority) → 유사도(score)."""
+        # 1) 모든 정책에 대한 코사인 유사도 확보 (25건 수준이라 전수 조회 부담 없음)
         q_emb = self._model.encode([query], normalize_embeddings=True).tolist()
         res = self._collection.query(
-            query_embeddings=q_emb, n_results=min(k, len(self.policies))
+            query_embeddings=q_emb, n_results=len(self.policies)
         )
-        ids = res["ids"][0]
-        distances = res["distances"][0]
-        metadatas = res["metadatas"][0]
+        # idx -> similarity (cosine space: distance = 1 - cos_sim, 정규화 벡터 기준)
+        sims: dict[int, float] = {}
+        for dist, meta in zip(res["distances"][0], res["metadatas"][0]):
+            sims[int(meta["idx"])] = 1.0 - float(dist)
 
-        out: list[MatchedPolicy] = []
-        for _id, dist, meta in zip(ids, distances, metadatas):
-            idx = int(meta["idx"])
-            policy = self.policies[idx]
-            # cosine space: distance = 1 - cosine_similarity (정규화 벡터 기준)
-            score = 1.0 - float(dist)
-            out.append(self._to_policy(policy, score))
-        return out
+        q_norm = self._norm(query)
+
+        # 2) 후보 분류: 임계값 통과 / 신호 강제포함 / 부적합 제외
+        # 항목: (idx, score, signal_hit)
+        threshold_or_signal: list[tuple[int, float, bool]] = []
+        keyword_fallback: list[tuple[int, float, bool]] = []
+        for idx, policy in enumerate(self.policies):
+            score = sims.get(idx, 0.0)
+
+            # 부적합 강제제외: exclude_if 토큰이 질의에 있으면 컷
+            if any(self._norm(x) in q_norm for x in policy.get("exclude_if", []) or []):
+                continue
+
+            signal_hit = any(
+                self._norm(s) in q_norm for s in policy.get("signals", []) or []
+            )
+            if score >= min_score or signal_hit:
+                threshold_or_signal.append((idx, score, signal_hit))
+                continue
+
+            # 임계값·신호 미달이지만 키워드가 질의에 있으면 폴백 후보로 보관
+            if any(self._norm(kw) in q_norm for kw in policy.get("keywords", []) or []):
+                keyword_fallback.append((idx, score, False))
+
+        # 3) 1차(임계값/신호)가 비면 키워드 폴백 사용, 그래도 없으면 빈 결과
+        selected = threshold_or_signal or keyword_fallback
+        if not selected:
+            return []
+
+        # 4) 랭킹: 유사도 중심 + 신호 가산점(강) + priority 가산점(약 tiebreak).
+        #    관련도(score)가 주이고, 신호/우선순위는 동급 후보 사이를 가르는 보정.
+        def rank(item: tuple[int, float, bool]) -> float:
+            idx, score, signal_hit = item
+            priority = int(self.policies[idx].get("priority", 5))
+            return score + (0.20 if signal_hit else 0.0) + (5 - min(priority, 5)) * 0.02
+
+        selected.sort(key=rank, reverse=True)
+
+        # 표시 score 는 보정 전 원본 유사도 유지
+        return [self._to_policy(self.policies[idx], score) for idx, score, _ in selected[:k]]
 
     @staticmethod
     def _to_policy(p: dict, score: float) -> MatchedPolicy:

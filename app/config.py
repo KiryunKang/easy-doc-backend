@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     # RAG
     corpus_path: str = "data/corpus.json"
     rag_top_k: int = 3
+    rag_min_score: float = 0.35  # 코사인 유사도 임계값(미달은 신호/키워드 폴백으로만 포함)
 
     # CORS
     cors_origins: list[str] = ["*"]
